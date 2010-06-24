@@ -1127,10 +1127,21 @@ void BaseTextEditor::keyPressEvent(QKeyEvent *e)
         if (!autoText.isEmpty()) {
             int pos = cursor.position();
             cursor.insertText(autoText);
-            cursor.setPosition(pos);
+            cursor.setPosition(pos, QTextCursor::KeepAnchor);
         }
         if (!electricChar.isNull())
             indent(document(), cursor, electricChar);
+		if (!autoText.isEmpty()) {
+			if (d->m_document->tabSettings().m_autoIndent)
+				reindent(document(), cursor);
+			//-Set to cursor.position() to stay at current position (auto-text *after* the cursor)
+			//-Set to cursor.anchor() to move to the position after the auto-text
+			//We use a simple heuristic to decide, maybe this should be a parameter of autoComplete()?
+			//or we may let the auto-completer specify the target position....
+			//(before/after/in the middle of completed text)
+			cursor.setPosition(autoText.length() == 1 ? cursor.position() : cursor.anchor());
+			//TODO: Maybe we should keep the text selected after the replacement? or make this an option of autoComplete()?
+		}
 
         if (doEditBlock)
             cursor.endEditBlock();

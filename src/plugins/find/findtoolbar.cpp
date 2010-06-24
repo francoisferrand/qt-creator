@@ -142,6 +142,13 @@ FindToolBar::FindToolBar(FindPlugin *plugin, CurrentDocumentFind *currentDocumen
     mfind->addAction(cmd, Constants::G_FIND_CURRENTDOCUMENT);
     connect(m_findInDocumentAction, SIGNAL(triggered()), this, SLOT(openFind()));
 
+	m_findNextInDocumentAction = new QAction(tr("Find next in document"), this);
+	cmd = am->registerAction(m_findNextInDocumentAction, Constants::FIND_NEXT_IN_DOC, globalcontext);
+	connect(m_findNextInDocumentAction, SIGNAL(triggered()), this, SLOT(findNextInDoc()));
+	m_findPreviousInDocumentAction = new QAction(tr("Find previous in document"), this);
+	cmd = am->registerAction(m_findPreviousInDocumentAction, Constants::FIND_PREV_IN_DOC, globalcontext);
+	connect(m_findPreviousInDocumentAction, SIGNAL(triggered()), this, SLOT(findPreviousInDoc()));
+
     if (QApplication::clipboard()->supportsFindBuffer()) {
         m_enterFindStringAction = new QAction(tr("Enter Find String"), this);
         cmd = am->registerAction(m_enterFindStringAction, QLatin1String("Find.EnterFindString"), globalcontext);
@@ -566,7 +573,7 @@ Core::FindToolBarPlaceHolder *FindToolBar::findToolBarPlaceHolder() const
     return 0;
 }
 
-void FindToolBar::openFind()
+void FindToolBar::openFind(bool focus)
 {
     if (!m_currentDocumentFind->candidateIsEnabled())
         return;
@@ -581,13 +588,27 @@ void FindToolBar::openFind()
     holder->setWidget(this);
     holder->setVisible(true);
     setVisible(true);
-    setFocus();
+	if (focus)
+		setFocus();
     QString text = m_currentDocumentFind->currentFindString();
     if (!text.isEmpty())
         setFindText(text);
     m_currentDocumentFind->defineFindScope();
     m_currentDocumentFind->highlightAll(getFindText(), effectiveFindFlags());
-    selectFindText();
+	if (focus)
+		selectFindText();
+}
+
+void FindToolBar::findNextInDoc()
+{
+	openFind(false);
+	invokeFindNext();
+}
+
+void FindToolBar::findPreviousInDoc()
+{
+	openFind(false);
+	invokeFindPrevious();
 }
 
 bool FindToolBar::focusNextPrevChild(bool next)

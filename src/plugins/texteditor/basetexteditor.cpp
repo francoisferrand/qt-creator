@@ -4634,7 +4634,8 @@ QMimeData *BaseTextEditor::createMimeDataFromSelection() const
 
 bool BaseTextEditor::canInsertFromMimeData(const QMimeData *source) const
 {
-    return QPlainTextEdit::canInsertFromMimeData(source);
+	return QPlainTextEdit::canInsertFromMimeData(source) &&
+		   !source->hasUrls();	//do not accept dropped files, so that they get opened as new files (instead of pasting the URL)
 }
 
 void BaseTextEditor::insertFromMimeData(const QMimeData *source)

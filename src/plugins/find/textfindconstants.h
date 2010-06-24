@@ -51,6 +51,8 @@ const char G_FIND_ACTIONS[]    = "Find.FindMenu.Actions";
 
 const char ADVANCED_FIND[]     = "Find.Dialog";
 const char FIND_IN_DOCUMENT[]  = "Find.FindInCurrentDocument";
+const char FIND_NEXT_IN_DOC[]  = "Find.FindNextInCurrentDocument";
+const char FIND_PREV_IN_DOC[]  = "Find.FindPreviousInCurrentDocument";
 const char FIND_NEXT[]         = "Find.FindNext";
 const char FIND_PREVIOUS[]     = "Find.FindPrevious";
 const char REPLACE[]           = "Find.Replace";

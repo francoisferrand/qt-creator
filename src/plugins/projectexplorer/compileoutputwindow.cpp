@@ -37,13 +37,65 @@
 #include <QtGui/QIcon>
 #include <QtGui/QTextEdit>
 #include <QtGui/QScrollBar>
+#include <QtGui/QTextBlock>
+#include <QtCore/QFileInfo>
+
+#include <texteditor/basetexteditor.h>
+#include <coreplugin/editormanager/editormanager.h>
 
 using namespace ProjectExplorer;
 using namespace ProjectExplorer::Internal;
 
+class QCompileOutputTextEdit: public QPlainTextEdit {
+public:
+	QCompileOutputTextEdit()
+	{
+		m_regExp.setPattern("^([^\\(\\)]+[^\\d]):(\\d+):.*$");
+		m_regExp.setMinimal(true);
+	}
+
+protected:
+	void keyPressEvent(QKeyEvent *ev)
+	{
+		QPlainTextEdit::keyPressEvent(ev);
+
+		//Ensure we scroll also on Ctrl+Home or Ctrl+End
+		if (ev->matches(QKeySequence::MoveToStartOfDocument))
+			verticalScrollBar()->triggerAction(QAbstractSlider::SliderToMinimum);
+		else if (ev->matches(QKeySequence::MoveToEndOfDocument))
+			verticalScrollBar()->triggerAction(QAbstractSlider::SliderToMaximum);
+	}
+
+	void mouseDoubleClickEvent(QMouseEvent *ev)
+	{
+		//Try to open file when double-clicking on it
+		QString line = cursorForPosition(ev->pos()).block().text();
+		if (m_regExp.indexIn(line) > -1)
+		{
+			QString filename = m_regExp.cap(1);
+			int lineNbr = m_regExp.cap(2).toInt();
+
+			QFileInfo fi(filename);	//TODO: may need to prefix with workingDirectory(currentBuildConfig)
+									//	--> See AbstractMakeStep::slotAddToTaskWindow()
+			if (fi.exists())
+			{
+				TextEditor::BaseTextEditor::openEditorAt(fi.canonicalFilePath(), lineNbr);
+				Core::EditorManager::instance()->ensureEditorManagerVisible();
+			}
+			else
+				QPlainTextEdit::mouseDoubleClickEvent(ev);
+		}
+		else
+			QPlainTextEdit::mouseDoubleClickEvent(ev);
+	}
+
+private:
+	QRegExp m_regExp;
+};
+
 CompileOutputWindow::CompileOutputWindow(BuildManager * /*bm*/)
 {
-    m_textEdit = new QPlainTextEdit();
+    m_textEdit = new QCompileOutputTextEdit();
     m_textEdit->setWindowTitle(tr("Compile Output"));
     m_textEdit->setWindowIcon(QIcon(":/qt4projectmanager/images/window.png"));
     m_textEdit->setReadOnly(true);

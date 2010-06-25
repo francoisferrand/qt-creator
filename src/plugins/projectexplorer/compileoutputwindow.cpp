@@ -49,6 +49,11 @@
 #include <QtGui/QTextEdit>
 #include <QtGui/QScrollBar>
 #include <QtGui/QPlainTextEdit>
+#include <QtGui/QTextBlock>
+#include <QtCore/QFileInfo>
+
+#include <texteditor/basetexteditor.h>
+#include <coreplugin/editormanager/editormanager.h>
 
 using namespace ProjectExplorer;
 using namespace ProjectExplorer::Internal;
@@ -57,9 +62,42 @@ namespace {
 const int MAX_LINECOUNT = 50000;
 }
 
+class CompileOutputTextEdit: public OutputWindow {
+public:
+	CompileOutputTextEdit()
+	{
+		m_regExp.setPattern("^([^\\(\\)]+[^\\d]):(\\d+):.*$");
+		m_regExp.setMinimal(true);
+	}
+
+protected:
+	void mouseDoubleClickEvent(QMouseEvent *ev)
+	{
+		//Try to open file when double-clicking on it
+		QString line = cursorForPosition(ev->pos()).block().text();
+		if (m_regExp.indexIn(line) > -1)
+		{
+			QString filename = m_regExp.cap(1);
+			int lineNbr = m_regExp.cap(2).toInt();
+
+			QFileInfo fi(filename);	//TODO: may need to prefix with workingDirectory(currentBuildConfig)
+									//	--> See AbstractMakeStep::slotAddToTaskWindow()
+			if (fi.exists())
+				TextEditor::BaseTextEditor::openEditorAt(fi.canonicalFilePath(), lineNbr);
+			else
+				QPlainTextEdit::mouseDoubleClickEvent(ev);
+		}
+		else
+			QPlainTextEdit::mouseDoubleClickEvent(ev);
+	}
+
+private:
+	QRegExp m_regExp;
+};
+
 CompileOutputWindow::CompileOutputWindow(BuildManager * /*bm*/)
 {
-    m_outputWindow = new OutputWindow();
+    m_outputWindow = new CompileOutputTextEdit();
     m_outputWindow->setWindowTitle(tr("Compile Output"));
     m_outputWindow->setWindowIcon(QIcon(QLatin1String(Qt4ProjectManager::Constants::ICON_WINDOW)));
     m_outputWindow->setReadOnly(true);

@@ -51,6 +51,11 @@
 #include <QTextEdit>
 #include <QScrollBar>
 #include <QPlainTextEdit>
+#include <QTextBlock>
+#include <QFileInfo>
+
+#include <texteditor/basetexteditor.h>
+#include <coreplugin/editormanager/editormanager.h>
 
 using namespace ProjectExplorer;
 using namespace ProjectExplorer::Internal;
@@ -59,10 +64,48 @@ namespace {
 const int MAX_LINECOUNT = 50000;
 }
 
+namespace ProjectExplorer {
+namespace Internal {
+
+class CompileOutputTextEdit: public Core::OutputWindow {
+public:
+	CompileOutputTextEdit(const Core::Context & context): Core::OutputWindow(context)
+	{
+	}
+
+	void addTask(const Task &task, int blocknumber)
+	{
+		m_tasks.insert(blocknumber, qMakePair(task.file.toString(), task.line));
+	}
+
+	void clearTasks()
+	{
+		m_tasks.clear();
+	}
+
+protected:
+	void mouseDoubleClickEvent(QMouseEvent *ev)
+	{
+		int line = cursorForPosition(ev->pos()).block().blockNumber();
+		QPair<QString,int> userdata = m_tasks.value(line);
+		if (!userdata.first.isEmpty())
+			TextEditor::BaseTextEditorWidget::openEditorAt(userdata.first, userdata.second);
+		else
+			QPlainTextEdit::mouseDoubleClickEvent(ev);
+	}
+
+private:
+	QRegExp m_regExp;
+	QHash<unsigned int, QPair<QString,int> > m_tasks;
+};
+
+} // namespace Internal
+} // namespace ProjectExplorer
+
 CompileOutputWindow::CompileOutputWindow(BuildManager * /*bm*/)
 {
     Core::Context context(Constants::C_COMPILE_OUTPUT);
-    m_outputWindow = new Core::OutputWindow(context);
+    m_outputWindow = new CompileOutputTextEdit(context);
     m_outputWindow->setWindowTitle(tr("Compile Output"));
     m_outputWindow->setWindowIcon(QIcon(QLatin1String(Constants::ICON_WINDOW)));
     m_outputWindow->setReadOnly(true);
@@ -191,7 +234,9 @@ void CompileOutputWindow::registerPositionOf(const Task &task)
     int blocknumber = m_outputWindow->blockCount();
     if (blocknumber > MAX_LINECOUNT)
         return;
+
     m_taskPositions.insert(task.taskId, blocknumber);
+    m_outputWindow->addTask(task, blocknumber);
 }
 
 bool CompileOutputWindow::knowsPositionOf(const Task &task)

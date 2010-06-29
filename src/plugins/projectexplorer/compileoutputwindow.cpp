@@ -89,6 +89,17 @@ protected:
 			QPlainTextEdit::mouseDoubleClickEvent(ev);
 	}
 
+	void resizeEvent(QResizeEvent *ev)
+	{
+		//Keep scrollbar at bottom of window while resizing, to ensure we keep scrolling
+		//This can happen if window is resized while building, or if the horizontal scrollbar appears
+		QScrollBar * sb = verticalScrollBar();
+		bool scrollToBottom = sb->value() == sb->maximum();
+		QPlainTextEdit::resizeEvent(ev);
+		if (scrollToBottom)
+			sb->triggerAction(QAbstractSlider::SliderToMaximum);
+	}
+
 private:
 	QRegExp m_regExp;
 };

@@ -49,6 +49,7 @@
 #include <coreplugin/progressmanager/progressmanager.h>
 #include <coreplugin/progressmanager/futureprogress.h>
 #include <projectexplorer/session.h>
+#include <coreplugin/modemanager.h>
 #include <extensionsystem/pluginmanager.h>
 #include <utils/qtcassert.h>
 
@@ -463,7 +464,11 @@ bool BuildManager::buildLists(QList<BuildStepList *> bsls)
     }
 
     if (ProjectExplorerPlugin::instance()->projectExplorerSettings().showCompilerOutput)
+	{
+		Core::ModeManager *modeManager = Core::ModeManager::instance();
+		modeManager->activateMode(tr("Edit"));
         d->m_outputWindow->popup(false);
+	}
     startBuildQueue();
     return true;
 }

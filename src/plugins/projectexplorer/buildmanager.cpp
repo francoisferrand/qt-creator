@@ -41,6 +41,7 @@
 #include <coreplugin/icore.h>
 #include <coreplugin/progressmanager/progressmanager.h>
 #include <coreplugin/progressmanager/futureprogress.h>
+#include <coreplugin/modemanager.h>
 #include <extensionsystem/pluginmanager.h>
 #include <utils/qtcassert.h>
 
@@ -342,7 +343,11 @@ void BuildManager::buildProjects(const QList<Project *> &projects, const QList<Q
         }
     }
     if (ProjectExplorerPlugin::instance()->projectExplorerSettings().showCompilerOutput)
+	{
+		Core::ModeManager *modeManager = Core::ModeManager::instance();
+		modeManager->activateMode(tr("Edit"));
         m_outputWindow->popup(false);
+	}
     startBuildQueue();
 }
 
@@ -360,7 +365,11 @@ void BuildManager::cleanProjects(const QList<Project *> &projects, const QList<Q
         }
     }
     if (ProjectExplorerPlugin::instance()->projectExplorerSettings().showCompilerOutput)
+	{
+		Core::ModeManager *modeManager = Core::ModeManager::instance();
+		modeManager->activateMode(tr("Edit"));
         m_outputWindow->popup(false);
+	}
     startBuildQueue();
 }
 

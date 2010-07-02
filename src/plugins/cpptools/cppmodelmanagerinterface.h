@@ -124,7 +124,7 @@ public:
                               const QString &fileName,
                               int line, int column);
 
-    static QString licenseTemplate();
+	static QString licenseTemplate(const QString &fileName);
 
 private:
     CppModelManagerInterface *m_modelmanager;

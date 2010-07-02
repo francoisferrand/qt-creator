@@ -228,14 +228,13 @@ bool CppClassWizard::generateHeaderAndSource(const CppClassWizardParameters &par
     if (namespaceList.empty()) // Paranoia!
         return false;
 
-    const QString license = CppTools::AbstractEditorSupport::licenseTemplate();
-
     const QString unqualifiedClassName = namespaceList.takeLast();
     const QString guard = Utils::headerGuard(params.headerFile);
 
     // == Header file ==
     QTextStream headerStr(header);
-    headerStr << license << "#ifndef " << guard
+	headerStr << CppTools::AbstractEditorSupport::licenseTemplate(params.headerFile)
+			  << "#ifndef " << guard
               << "\n#define " <<  guard << '\n';
 
     const QRegExp qtClassExpr(QLatin1String("^Q[A-Z3].+"));
@@ -296,7 +295,7 @@ bool CppClassWizard::generateHeaderAndSource(const CppClassWizardParameters &par
 
     // == Source file ==
     QTextStream sourceStr(source);
-    sourceStr << license;
+	sourceStr << CppTools::AbstractEditorSupport::licenseTemplate(params.sourceFile);
     Utils::writeIncludeFileDirective(params.headerFile, false, sourceStr);
     Utils::writeOpeningNameSpaces(namespaceList, QString(), sourceStr);
 

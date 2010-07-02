@@ -35,6 +35,7 @@
 
 #include <cpptools/cppmodelmanagerinterface.h>
 #include <utils/pathchooser.h>
+#include <QDir>
 
 namespace Qt4ProjectManager {
 namespace Internal {
@@ -64,7 +65,7 @@ Core::GeneratedFiles CustomWidgetWizard::generateFiles(const QWizard *w,
     GenerationParameters p;
     p.name = cw->name();
     p.path = cw->path();
-    p.license = CppTools::AbstractEditorSupport::licenseTemplate();
+	p.license = CppTools::AbstractEditorSupport::licenseTemplate(QFileInfo(QDir(p.path), p.name).filePath());
     p.templatePath = QtWizard::templateDir();
     p.templatePath += QLatin1String("/customwidgetwizard");
     return PluginGenerator::generatePlugin(p, *(cw->pluginOptions()), errorMessage);

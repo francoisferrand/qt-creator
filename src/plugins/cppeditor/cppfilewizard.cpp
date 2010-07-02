@@ -71,7 +71,7 @@ QString CppFileWizard::fileContents(FileType type, const QString &fileName) cons
     const QString baseName = QFileInfo(fileName).completeBaseName();
     QString contents;
     QTextStream str(&contents);
-    str << CppTools::AbstractEditorSupport::licenseTemplate();
+	str << CppTools::AbstractEditorSupport::licenseTemplate(fileName);
     switch (type) {
     case Header: {
             const QString guard = Utils::headerGuard(fileName);

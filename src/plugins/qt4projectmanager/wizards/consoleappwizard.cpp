@@ -78,11 +78,11 @@ Core::GeneratedFiles
     const ConsoleAppWizardDialog *wizard = qobject_cast< const ConsoleAppWizardDialog *>(w);
     const QtProjectParameters params = wizard->parameters();
     const QString projectPath = params.projectPath();
-    const QString license = CppTools::AbstractEditorSupport::licenseTemplate();
 
     // Create files: Source
 
     const QString sourceFileName = Core::BaseFileWizard::buildFileName(projectPath, QLatin1String(mainSourceFileC), sourceSuffix());
+	const QString license = CppTools::AbstractEditorSupport::licenseTemplate(sourceFileName);
     Core::GeneratedFile source(sourceFileName);
     source.setContents(license + QLatin1String(mainCppC));
     // Create files: Profile

@@ -52,6 +52,11 @@ class IVersionControl;
 namespace Utils { class ParameterAction; }
 namespace VcsBase { class VcsBaseSubmitEditor; }
 namespace Locator { class CommandLocator; }
+namespace ProjectExplorer {
+    class ProjectExplorerPlugin;
+	class Node;
+	class Project;
+}
 
 namespace Cvs {
 namespace Internal {
@@ -125,6 +130,11 @@ private slots:
     void uneditCurrentFile();
     void uneditCurrentRepository();
     void cvsDiff(const Cvs::Internal::CvsDiffParameters &p);
+	void contextChanged(ProjectExplorer::Node*,ProjectExplorer::Project*);
+	void contextDiff();
+	void contextCommit();
+	void contextUpdate(bool recursive = true);
+	void contextUpdateLocal();
 
 protected:
     virtual void updateActions(VcsBase::VcsBasePlugin::ActionState);
@@ -187,6 +197,11 @@ private:
     QAction *m_diffRepositoryAction;
     QAction *m_updateRepositoryAction;
     QAction *m_statusRepositoryAction;
+
+	QAction *m_contextDiffAction;
+	QAction *m_contextCommitAction;
+	QAction *m_contextUpdateAction;
+	QAction *m_contextUpdateLocalAction;
 
     QAction *m_submitCurrentLogAction;
     QAction *m_submitDiffAction;

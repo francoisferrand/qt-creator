@@ -47,6 +47,11 @@
 #include <utils/synchronousprocess.h>
 #include <utils/parameteraction.h>
 #include <utils/qtcassert.h>
+#include <projectexplorer/session.h>
+#include <projectexplorer/project.h>
+#include <projectexplorer/projectnodes.h>
+#include <projectexplorer/projectexplorer.h>
+#include <projectexplorer/projectexplorerconstants.h>
 
 #include <coreplugin/icore.h>
 #include <coreplugin/coreconstants.h>
@@ -117,6 +122,11 @@ static const char CMD_ID_REPOSITORYDIFF[]     = "CVS.RepositoryDiff";
 static const char CMD_ID_REPOSITORYSTATUS[]   = "CVS.RepositoryStatus";
 static const char CMD_ID_REPOSITORYUPDATE[]   = "CVS.RepositoryUpdate";
 static const char CMD_ID_SEPARATOR3[]         = "CVS.Separator3";
+static const char CMD_ID_CONTEXT_SEPARATOR[]  = "CVS.Context.Separator";
+static const char CMD_ID_CONTEXT_UPDATE[]     = "CVS.Context.Update";
+static const char CMD_ID_CONTEXT_UPDATELOCAL[]= "CVS.Context.UpdateLocal";
+static const char CMD_ID_CONTEXT_COMMIT[]     = "CVS.Context.Commit";
+static const char CMD_ID_CONTEXT_DIFF[]		  = "CVS.Context.Diff";
 
 static const VcsBaseEditorParameters editorParameters[] = {
 {
@@ -445,6 +455,40 @@ bool CvsPlugin::initialize(const QStringList &arguments, QString *errorMessage)
     cvsMenu->addAction(command);
     m_commandLocator->appendCommand(command);
 
+	// Actions in project explorer (update/diff/commit)
+	Core::ActionContainer *mfolder = ami->actionContainer(ProjectExplorer::Constants::M_FOLDERCONTEXT);
+	Core::ActionContainer *mfilec = ami->actionContainer(ProjectExplorer::Constants::M_FILECONTEXT);
+
+	command = createSeparator(this, ami, CMD_ID_CONTEXT_SEPARATOR, globalcontext);
+	mfilec->addAction(command, ProjectExplorer::Constants::G_FILE_OTHER);
+	mfolder->addAction(command, ProjectExplorer::Constants::G_FOLDER_OTHER);
+
+	m_contextDiffAction = new QAction(tr("Diff"), this);
+	command = ami->registerAction(m_contextDiffAction, CMD_ID_CONTEXT_DIFF, globalcontext);
+	connect(m_contextDiffAction, SIGNAL(triggered()), this, SLOT(contextDiff()));
+	mfilec->addAction(command, ProjectExplorer::Constants::G_FILE_OTHER);
+
+	m_contextCommitAction = new QAction(tr("Commit"), this);
+	command = ami->registerAction(m_contextCommitAction, CMD_ID_CONTEXT_COMMIT, globalcontext);
+	connect(m_contextCommitAction, SIGNAL(triggered()), this, SLOT(contextCommit()));
+	mfilec->addAction(command, ProjectExplorer::Constants::G_FILE_OTHER);
+	mfolder->addAction(command, ProjectExplorer::Constants::G_FOLDER_OTHER);
+
+	m_contextUpdateAction = new QAction(tr("Update"), this);
+	command = ami->registerAction(m_contextUpdateAction, CMD_ID_CONTEXT_UPDATE, globalcontext);
+	connect(m_contextUpdateAction, SIGNAL(triggered()), this, SLOT(contextUpdate()));
+	mfilec->addAction(command, ProjectExplorer::Constants::G_FILE_OTHER);
+	mfolder->addAction(command, ProjectExplorer::Constants::G_FOLDER_OTHER);
+
+	m_contextUpdateLocalAction = new QAction(tr("Update this folder only"), this);
+	command = ami->registerAction(m_contextUpdateLocalAction, CMD_ID_CONTEXT_UPDATELOCAL, globalcontext);
+	connect(m_contextUpdateLocalAction, SIGNAL(triggered()), this, SLOT(contextUpdateLocal()));
+	mfolder->addAction(command, ProjectExplorer::Constants::G_FOLDER_OTHER);
+
+	connect(ProjectExplorer::ProjectExplorerPlugin::instance(),
+			SIGNAL(currentNodeChanged(ProjectExplorer::Node*,ProjectExplorer::Project*)),
+			this, SLOT(contextChanged(ProjectExplorer::Node*,ProjectExplorer::Project*)));
+
     // Actions of the submit editor
     Context cvscommitcontext(Constants::CVSCOMMITEDITOR);
 
@@ -462,6 +506,71 @@ bool CvsPlugin::initialize(const QStringList &arguments, QString *errorMessage)
     m_submitRedoAction = new QAction(tr("&Redo"), this);
     command = ami->registerAction(m_submitRedoAction, Core::Constants::REDO, cvscommitcontext);
     return true;
+}
+
+void CvsPlugin::contextChanged(ProjectExplorer::Node*,ProjectExplorer::Project*)
+{
+	ProjectExplorer::ProjectExplorerPlugin * projectExplorer = ProjectExplorer::ProjectExplorerPlugin::instance();
+	ProjectExplorer::Node * node = projectExplorer ? projectExplorer->currentNode() : NULL;
+	bool isCVS = (node && managesDirectory(QFileInfo(node->path()).absolutePath()));
+	m_contextDiffAction->setVisible(isCVS);
+	m_contextCommitAction->setVisible(isCVS);
+	m_contextUpdateAction->setVisible(isCVS);
+	m_contextUpdateLocalAction->setVisible(isCVS);
+}
+
+void CvsPlugin::contextDiff()
+{
+	ProjectExplorer::ProjectExplorerPlugin * projectExplorer = ProjectExplorer::ProjectExplorerPlugin::instance();
+	ProjectExplorer::Node * node = projectExplorer ? projectExplorer->currentNode() : NULL;
+	QString topLevel;
+	if (node && managesDirectory(QFileInfo(node->path()).absolutePath(), &topLevel))
+		cvsDiff(topLevel, QStringList(QDir(topLevel).relativeFilePath(node->path())));
+}
+
+void CvsPlugin::contextCommit()
+{
+	ProjectExplorer::ProjectExplorerPlugin * projectExplorer = ProjectExplorer::ProjectExplorerPlugin::instance();
+	ProjectExplorer::Node * node = projectExplorer ? projectExplorer->currentNode() : NULL;
+	QString source = node->path();
+	QFileInfo info(source);
+	const QString sourcePath = info.absolutePath();
+	QString topLevel;
+	if (node && managesDirectory(sourcePath, &topLevel))
+	{
+		if (info.isDir())
+			startCommit(source);
+		else
+			startCommit(sourcePath, QStringList(QDir(sourcePath).relativeFilePath(source)));
+	}
+}
+
+void CvsPlugin::contextUpdate(bool recursive)
+{
+	ProjectExplorer::ProjectExplorerPlugin * projectExplorer = ProjectExplorer::ProjectExplorerPlugin::instance();
+	ProjectExplorer::Node * node = projectExplorer ? projectExplorer->currentNode() : NULL;
+	QString source = node->path();
+	QFileInfo info(source);
+	QString topLevel;
+	if (node && managesDirectory(info.isDir() ? source : info.absolutePath(), &topLevel))
+	{
+		QStringList args(QLatin1String("update"));
+		if (recursive)
+			args.push_back(QLatin1String("-dR"));
+		else
+			args.push_back(QLatin1String("-dl"));
+		args.append(QDir(topLevel).relativeFilePath(source));
+		const CvsResponse response = runCvs(topLevel, args, m_settings.longTimeOutMS(),
+											SshPasswordPrompt|ShowStdOutInLogWindow);
+		const bool ok = response.result == CvsResponse::Ok;
+		if (ok)
+			cvsVersionControl()->emitRepositoryChanged(topLevel);
+	}
+}
+
+void CvsPlugin::contextUpdateLocal()
+{
+	contextUpdate(false);
 }
 
 bool CvsPlugin::submitEditorAboutToClose(VcsBaseSubmitEditor *submitEditor)

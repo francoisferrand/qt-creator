@@ -53,6 +53,8 @@ namespace Utils {
 
 namespace ProjectExplorer {
     class ProjectExplorerPlugin;
+	class Node;
+	class Project;
 }
 
 namespace CVS {
@@ -124,6 +126,12 @@ private slots:
     void submitCurrentLog();
     void diffFiles(const QStringList &);
 
+	void contextChanged(ProjectExplorer::Node*,ProjectExplorer::Project*);
+	void contextDiff();
+	void contextCommit();
+	void contextUpdate(bool recursive = true);
+	void contextUpdateLocal();
+
 private:
     bool isCommitEditorOpen() const;
     QString currentFileName() const;
@@ -170,6 +178,11 @@ private:
     Utils::ParameterAction *m_annotateCurrentAction;
     QAction *m_statusAction;
     QAction *m_updateProjectAction;
+
+	QAction *m_contextDiffAction;
+	QAction *m_contextCommitAction;
+	QAction *m_contextUpdateAction;
+	QAction *m_contextUpdateLocalAction;
 
     QAction *m_submitCurrentLogAction;
     QAction *m_submitDiffAction;

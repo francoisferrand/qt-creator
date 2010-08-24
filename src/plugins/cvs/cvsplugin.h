@@ -61,6 +61,12 @@ namespace Locator {
     class CommandLocator;
 }
 
+namespace ProjectExplorer {
+    class ProjectExplorerPlugin;
+	class Node;
+	class Project;
+}
+
 namespace CVS {
 namespace Internal {
 
@@ -131,6 +137,11 @@ private slots:
     void editCurrentFile();
     void uneditCurrentFile();
     void uneditCurrentRepository();
+	void contextChanged(ProjectExplorer::Node*,ProjectExplorer::Project*);
+	void contextDiff();
+	void contextCommit();
+	void contextUpdate(bool recursive = true);
+	void contextUpdateLocal();
 
 protected:
     virtual void updateActions(VCSBase::VCSBasePlugin::ActionState);
@@ -193,6 +204,11 @@ private:
     QAction *m_diffRepositoryAction;
     QAction *m_updateRepositoryAction;
     QAction *m_statusRepositoryAction;
+
+	QAction *m_contextDiffAction;
+	QAction *m_contextCommitAction;
+	QAction *m_contextUpdateAction;
+	QAction *m_contextUpdateLocalAction;
 
     QAction *m_submitCurrentLogAction;
     QAction *m_submitDiffAction;

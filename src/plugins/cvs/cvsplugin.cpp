@@ -736,8 +736,9 @@ void CVSPlugin::startCommit(const QString &source)
         return;
     }
     const QFileInfo sourceFi(source);
-    const QString sourceDir = sourceFi.isDir() ? source : sourceFi.absolutePath();
-    const QString topLevel = findTopLevelForDirectory(sourceDir);
+	const bool isDir = sourceFi.isDir();
+	const QString sourceDir = isDir ? source : sourceFi.absolutePath();
+	QString topLevel = findTopLevelForDirectory(sourceDir);
     if (topLevel.isEmpty()) {
         VCSBase::VCSBaseOutputWindow::instance()->appendError(msgCannotFindTopLevel(source));
         return;
@@ -747,8 +748,13 @@ void CVSPlugin::startCommit(const QString &source)
     QStringList args = QStringList(QLatin1String("status"));
     if (sourceDir == topLevel) {
         args.push_back(QString(QLatin1Char('.')));
-    } else {
-        args.push_back(QDir(topLevel).relativeFilePath(source));
+	} else if (isDir){
+		args.push_back(QDir(topLevel).relativeFilePath(source));
+	} else {
+		//For single files, CVS status does not print the 'Examining directory' message:
+		//so we work in the source directory directly
+		topLevel = sourceDir;
+		args.push_back(QDir(topLevel).relativeFilePath(source));
     }
     const CVSResponse response = runCVS(topLevel, args, cvsShortTimeOut, false, 0, true);
     if (response.result != CVSResponse::Ok)

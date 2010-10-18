@@ -57,7 +57,9 @@ public:
             Local,
             Field,
             Static,
-            VirtualMethod
+			VirtualMethod,
+			Function,
+			Enum,
         };
 
         Use(unsigned line = 0, unsigned column = 0, unsigned length = 0, unsigned kind = Type)

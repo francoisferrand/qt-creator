@@ -297,7 +297,9 @@ private:
     QTextCharFormat m_fieldFormat;
     QTextCharFormat m_staticFormat;
     QTextCharFormat m_keywordFormat;
+	QTextCharFormat m_functionFormat;
     QTextCharFormat m_virtualMethodFormat;
+	QTextCharFormat m_enumFormat;
 
     QList<QTextEdit::ExtraSelection> m_renameSelections;
     int m_currentRenameSelection;

@@ -181,7 +181,8 @@ public:
     enum ExtraDiagnosticKind
     {
         AllExtraDiagnostics = -1,
-        ExportedQmlTypesDiagnostic
+        ExportedQmlTypesDiagnostic,
+        CppSemanticsDiagnostic
     };
 
 public:

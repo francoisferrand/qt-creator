@@ -582,6 +582,17 @@ void OutputWindow::resizeEvent(QResizeEvent *e)
 		scrollToBottom();
 }
 
+void OutputWindow::keyPressEvent(QKeyEvent *ev)
+{
+	QPlainTextEdit::keyPressEvent(ev);
+
+	//Ensure we scroll also on Ctrl+Home or Ctrl+End
+	if (ev->matches(QKeySequence::MoveToStartOfDocument))
+		verticalScrollBar()->triggerAction(QAbstractSlider::SliderToMinimum);
+	else if (ev->matches(QKeySequence::MoveToEndOfDocument))
+		verticalScrollBar()->triggerAction(QAbstractSlider::SliderToMaximum);
+}
+
 OutputFormatter *OutputWindow::formatter() const
 {
     return m_formatter;

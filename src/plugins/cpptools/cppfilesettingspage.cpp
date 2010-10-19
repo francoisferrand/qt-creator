@@ -120,6 +120,14 @@ static bool keyWordReplacement(const QString &keyWord,
         *value = QString::number(QDate::currentDate().year());
         return true;
     }
+	if (keyWord == QLatin1String("%MONTH%")) {
+		*value = QString::number(QDate::currentDate().month());
+		return true;
+	}
+	if (keyWord == QLatin1String("%DAY%")) {
+		*value = QString::number(QDate::currentDate().day());
+		return true;
+	}
     if (keyWord == QLatin1String("%CLASS%")) {
         *value = className;
         return true;

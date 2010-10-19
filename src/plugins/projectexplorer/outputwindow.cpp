@@ -572,6 +572,16 @@ void OutputWindow::mouseMoveEvent(QMouseEvent *e)
     QPlainTextEdit::mouseMoveEvent(e);
 }
 
+void OutputWindow::resizeEvent(QResizeEvent *e)
+{
+	//Keep scrollbar at bottom of window while resizing, to ensure we keep scrolling
+	//This can happen if window is resized while building, or if the horizontal scrollbar appears
+	bool atBottom = isScrollbarAtBottom();
+	QPlainTextEdit::resizeEvent(e);
+	if (atBottom)
+		scrollToBottom();
+}
+
 OutputFormatter *OutputWindow::formatter() const
 {
     return m_formatter;

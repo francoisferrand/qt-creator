@@ -548,6 +548,38 @@ void CPPEditor::cut()
     finishRename();
 }
 
+QString CPPEditor::autoComplete(QTextCursor &cursor, const QString &textToInsert) const
+{
+	if (textToInsert == QLatin1String("(") && cursor.hasSelection())
+		return cursor.selectedText() + QLatin1String(")");
+	if (textToInsert == QLatin1String("{") && cursor.hasSelection())
+	{
+		//If the text span multiple lines, insert on different lines
+		QString str = cursor.selectedText();
+		if (str.contains(QChar::ParagraphSeparator))
+		{
+			//Also, try to simulate auto-indent
+			str = (str.startsWith(QChar::ParagraphSeparator) ? QString() : QString(QChar::ParagraphSeparator)) +
+				  str;
+			if (str.endsWith(QChar::ParagraphSeparator))
+				str += QLatin1String("}") + QString(QChar::ParagraphSeparator);
+			else
+				str += QString(QChar::ParagraphSeparator) + QLatin1String("}");
+		}
+		else
+			str += QLatin1String("}");
+		return str;
+	}
+	if (textToInsert == QLatin1String("[") && cursor.hasSelection())
+		return cursor.selectedText() + QLatin1String("]");
+	if (textToInsert == QLatin1String("\"") && cursor.hasSelection())
+		return cursor.selectedText() + QLatin1String("\"");
+	if (textToInsert == QLatin1String("'") && cursor.hasSelection())
+		return cursor.selectedText() + QLatin1String("'");
+
+	return BaseTextEditor::autoComplete(cursor, textToInsert);
+}
+
 CppTools::CppModelManagerInterface *CPPEditor::modelManager() const
 {
     return m_modelManager;

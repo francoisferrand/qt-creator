@@ -2362,7 +2362,7 @@ void BaseTextEditor::paintEvent(QPaintEvent *e)
 
     qreal lineX = 0;
 
-    if (d->m_visibleWrapColumn > 0) {
+	if (0 && d->m_visibleWrapColumn > 0) {
         lineX = fontMetrics().averageCharWidth() * d->m_visibleWrapColumn + offset.x() + 4;
 
         if (lineX < viewportRect.width()) {
@@ -2946,6 +2946,20 @@ void BaseTextEditor::paintEvent(QPaintEvent *e)
         d->m_searchResultOverlay->clear();
     }
 
+	if (d->m_visibleWrapColumn > 0) {
+		//Show a line only (do not act as a margin)
+		lineX = fontMetrics().averageCharWidth() * d->m_visibleWrapColumn + offset.x() + 4;
+
+		if (lineX < viewportRect.width()) {
+			QColor background = d->m_ifdefedOutFormat.background().color();
+			background.setAlpha(32);
+
+			const QPen pen = painter.pen();
+			painter.setPen(background);
+			painter.drawLine(QPointF(lineX, er.top()), QPointF(lineX, er.bottom()));
+			painter.setPen(pen);
+		}
+	}
 
     // draw the cursor last, on top of everything
     if (cursor_layout && !d->m_inBlockSelectionMode) {

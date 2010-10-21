@@ -44,6 +44,7 @@
 #include <Symbols.h>
 #include <TypeHierarchyBuilder.h>
 #include <cplusplus/ModelManagerInterface.h>
+#include <Literals.h>
 #include <cplusplus/ExpressionUnderCursor.h>
 #include <cplusplus/Overview.h>
 #include <cplusplus/TypeOfExpression.h>
@@ -555,7 +556,38 @@ CppEnumerator::CppEnumerator(CPlusPlus::EnumeratorDeclaration *declaration)
     const QString enumName = overview.prettyName(LookupContext::fullyQualifiedName(enumSymbol));
     const QString enumeratorName = overview.prettyName(declaration->name());
     QString enumeratorValue;
-    if (const StringLiteral *value = declaration->constantValue()) {
+    if (enumSymbol) {
+        //Compute value
+        Scope *enumScope = declaration->enclosingScope();
+        int offset = 0;
+        const StringLiteral * basevalue = NULL;
+        for(unsigned i=0; i<enumScope->memberCount(); i++)
+        {
+            Symbol * symbol = enumScope->memberAt(i);
+
+            if (Declaration * decl = symbol->asDeclaration()) {
+                if (EnumeratorDeclaration * enumerator = decl->asEnumeratorDeclarator()) {
+                    if (enumerator->constantValue()) {
+                        //a value is set in definition!
+                        basevalue = enumerator->constantValue();
+                        offset = 0;
+                    }
+                }
+            }
+            if (symbol == declaration)
+                break;
+            else
+                offset ++;
+        }
+
+        if (!basevalue)
+            enumeratorValue = QString("%1").arg(offset);
+        else if (offset == 0)
+            enumeratorValue = basevalue->chars();
+        else
+            enumeratorValue = basevalue->chars() + QString(" + %1").arg(offset);
+    }
+    else if (const StringLiteral *value = declaration->constantValue()) {
         enumeratorValue = QString::fromUtf8(value->chars(), value->size());
     }
 
@@ -563,7 +595,7 @@ CppEnumerator::CppEnumerator(CPlusPlus::EnumeratorDeclaration *declaration)
 
     QString tooltip = enumeratorName;
     if (!enumName.isEmpty())
-        tooltip.prepend(enumName + QLatin1Char(' '));
+        tooltip.prepend(enumName + QLatin1Char('.'));
     if (!enumeratorValue.isEmpty())
         tooltip.append(QLatin1String(" = ") + enumeratorValue);
     setTooltip(tooltip);

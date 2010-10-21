@@ -166,6 +166,9 @@ public:
     /// Returns true if this Symbol is an Enum.
     bool isEnum() const;
 
+	/// Returns true if this Symbol is an Enumerator.
+	bool isEnumerator() const;
+
     /// Returns true if this Symbol is an Function.
     bool isFunction() const;
 
@@ -225,6 +228,7 @@ public:
 
     virtual const Scope *asScope() const { return 0; }
     virtual const Enum *asEnum() const { return 0; }
+	virtual const Enumerator *asEnumerator() const { return 0; }
     virtual const Function *asFunction() const { return 0; }
     virtual const Namespace *asNamespace() const { return 0; }
     virtual const Template *asTemplate() const { return 0; }
@@ -249,6 +253,7 @@ public:
 
     virtual Scope *asScope() { return 0; }
     virtual Enum *asEnum() { return 0; }
+	virtual Enumerator *asEnumerator() { return 0; }
     virtual Function *asFunction() { return 0; }
     virtual Namespace *asNamespace() { return 0; }
     virtual Template *asTemplate() { return 0; }

@@ -427,6 +427,32 @@ void Enum::visitSymbol0(SymbolVisitor *visitor)
     }
 }
 
+Enumerator::Enumerator(TranslationUnit *translationUnit, unsigned sourceLocation, const Name *name)
+	: Symbol(translationUnit, sourceLocation, name),
+	  _initializer(0)
+{ }
+
+Enumerator::~Enumerator()
+{ }
+
+bool Enumerator::hasInitializer() const
+{ return _initializer != 0; }
+
+const StringLiteral *Enumerator::initializer() const
+{ return _initializer; }
+
+void Enumerator::setInitializer(const StringLiteral *initializer)
+{ _initializer = initializer; }
+
+void Enumerator::setType(const FullySpecifiedType &type)
+{ _type = type; }
+
+FullySpecifiedType Enumerator::type() const
+{ return _type; }
+
+void Enumerator::visitSymbol0(SymbolVisitor *visitor)
+{ visitor->visit(this); }
+
 Template::Template(TranslationUnit *translationUnit, unsigned sourceLocation, const Name *name)
     : Scope(translationUnit, sourceLocation, name)
 { }

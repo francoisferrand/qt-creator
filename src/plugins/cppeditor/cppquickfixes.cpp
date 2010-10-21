@@ -1309,10 +1309,10 @@ public:
                     // check the possible enum values
                     QStringList values;
                     Overview prettyPrint;
-                    for (unsigned i = 0; i < e->memberCount(); ++i) {
-                        if (Declaration *decl = e->memberAt(i)->asDeclaration()) {
-                            values << prettyPrint(LookupContext::fullyQualifiedName(decl));
-                        }
+					for (unsigned i = 0; i < e->memberCount(); ++i) {
+						if (Enumerator *arg = e->memberAt(i)->asEnumerator()) {
+							values << prettyPrint(LookupContext::fullyQualifiedName(arg));
+						}
                     }
                     // Get the used values
                     Block *block = switchStatement->symbol;

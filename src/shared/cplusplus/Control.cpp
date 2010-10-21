@@ -466,6 +466,13 @@ public:
         return e;
     }
 
+	Enumerator *newEnumerator(unsigned sourceLocation, const Name *name)
+	{
+		Enumerator *e = new Enumerator(translationUnit, sourceLocation, name);
+		symbols.push_back(e);
+		return e;
+	}
+
     UsingDeclaration *newUsingDeclaration(unsigned sourceLocation, const Name *name)
     {
         UsingDeclaration *u = new UsingDeclaration(translationUnit, sourceLocation, name);
@@ -682,6 +689,9 @@ Class *Control::newClass(unsigned sourceLocation, const Name *name)
 
 Enum *Control::newEnum(unsigned sourceLocation, const Name *name)
 { return d->newEnum(sourceLocation, name); }
+
+Enumerator *Control::newEnumerator(unsigned sourceLocation, const Name *name)
+{ return d->newEnumerator(sourceLocation, name); }
 
 Block *Control::newBlock(unsigned sourceLocation)
 { return d->newBlock(sourceLocation); }

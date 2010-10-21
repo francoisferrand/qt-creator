@@ -127,6 +127,7 @@ class BaseClass;
 class Block;
 class Class;
 class Enum;
+class Enumerator;
 class ForwardClassDeclaration;
 
 class Token;

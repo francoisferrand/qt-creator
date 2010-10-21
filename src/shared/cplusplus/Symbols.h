@@ -280,6 +280,36 @@ protected:
     virtual bool matchType0(const Type *otherType, TypeMatcher *matcher) const;
 };
 
+class CPLUSPLUS_EXPORT Enumerator: public Symbol
+{
+public:
+	Enumerator(TranslationUnit *translationUnit, unsigned sourceLocation, const Name *name);
+	virtual ~Enumerator();
+
+	void setType(const FullySpecifiedType &type);
+
+	bool hasInitializer() const;
+
+	const StringLiteral *initializer() const;
+	void setInitializer(const StringLiteral *initializer);
+
+	// Symbol's interface
+	virtual FullySpecifiedType type() const;
+
+	virtual const Enumerator *asEnumerator() const
+	{ return this; }
+
+	virtual Enumerator *asEnumerator()
+	{ return this; }
+
+protected:
+	virtual void visitSymbol0(SymbolVisitor *visitor);
+
+private:
+	const StringLiteral *_initializer;
+	FullySpecifiedType _type;
+};
+
 class CPLUSPLUS_EXPORT Function: public Scope, public Type
 {
 public:

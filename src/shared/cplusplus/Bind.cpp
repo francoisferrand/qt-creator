@@ -473,9 +473,23 @@ void Bind::enumerator(EnumeratorAST *ast, Enum *symbol)
 
     if (ast->identifier_token) {
         const Name *name = identifier(ast->identifier_token);
-        Declaration *e = control()->newDeclaration(ast->identifier_token, name);
-        e->setType(control()->integerType(IntegerType::Int)); // ### introduce IntegerType::Enumerator
-        symbol->addMember(e);
+		Enumerator * e = control()->newEnumerator(ast->identifier_token, name);
+		e->setType(control()->integerType(IntegerType::Int)); // ### introduce IntegerType::Enumerator
+		if (ast->expression)
+		{
+			unsigned startOfExpression = ast->expression->firstToken();
+			unsigned endOfExpression = ast->expression->lastToken();
+			std::string buffer;
+			for (unsigned index = startOfExpression; index != endOfExpression; ++index) {
+				const Token &tk = tokenAt(index);
+				if (tk.whitespace() || tk.newline())
+					buffer += ' ';
+				buffer += tk.spell();
+			}
+			const StringLiteral *initializer = control()->stringLiteral(buffer.c_str(), buffer.size());
+			e->setInitializer(initializer);
+		}
+		symbol->addMember(e);
     }
 }
 

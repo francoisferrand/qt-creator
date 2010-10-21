@@ -42,6 +42,7 @@
 #include <Scope.h>
 #include <Symbol.h>
 #include <Symbols.h>
+#include <Literals.h>
 #include <cplusplus/ExpressionUnderCursor.h>
 #include <cplusplus/Overview.h>
 #include <cplusplus/TypeOfExpression.h>
@@ -448,10 +449,40 @@ CppEnum::CppEnum(Symbol *declaration) : CppDeclarableElement(declaration)
     setHelpCategory(TextEditor::HelpItem::Enum);
 
     if (declaration->enclosingScope()->isEnum()) {
-        Symbol *enumSymbol = declaration->enclosingScope()->asEnum();
-        Overview overview;
+		//Compute value
+		Scope *enumScope = declaration->enclosingScope();
+		int offset = 0;
+		const StringLiteral * basevalue = NULL;
+		for(unsigned i=0; i<enumScope->memberCount(); i++)
+		{
+			Symbol * symbol = enumScope->memberAt(i);
+			Enumerator * enumerator = symbol->asEnumerator();
+			if (enumerator && enumerator->hasInitializer())	//a value is set in definition!
+			{
+				basevalue = enumerator->initializer();
+				offset = 0;
+			}
+			if (symbol == declaration)
+				break;
+			else
+				offset ++;
+		}
+
+		//Build help reference
+		Overview overview;
+		Symbol *enumSymbol = declaration->enclosingScope()->asEnum();
         setHelpMark(overview.prettyName(enumSymbol->name()));
-        setTooltip(overview.prettyName(LookupContext::fullyQualifiedName(enumSymbol)));
+
+		//Build tooltip
+		QString str = overview.prettyName(LookupContext::fullyQualifiedName(enumSymbol)) +
+					  "." +
+					  name();
+		if (!basevalue)
+			setTooltip(str + QString(" = %1").arg(offset));
+		else if (offset == 0)
+			setTooltip(str + " = " + basevalue->chars());
+		else
+			setTooltip(str + " = " + basevalue->chars() + QString(" + %1").arg(offset));
     } else {
         setTooltip(qualifiedName());
     }

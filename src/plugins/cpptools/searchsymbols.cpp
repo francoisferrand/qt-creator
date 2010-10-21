@@ -156,6 +156,21 @@ bool SearchSymbols::visit(Declaration *symbol)
     return false;
 }
 
+bool SearchSymbols::visit(CPlusPlus::Enumerator * symbol)
+{
+	if (!(symbolsToSearchFor & Declarations))
+		return false;
+
+	QString name = symbolName(symbol);
+	QString scopedName = scopedSymbolName(name);
+	QString type = overview.prettyType(symbol->type(),
+									   separateScope ? symbol->unqualifiedName() : 0);
+	appendItem(separateScope ? type : scopedName,
+			   separateScope ? _scope : type,
+			   ModelItemInfo::Declaration, symbol);
+	return false;
+}
+
 bool SearchSymbols::visit(Class *symbol)
 {
     QString name = symbolName(symbol);
@@ -190,7 +205,7 @@ bool SearchSymbols::visit(CPlusPlus::NamespaceAlias *)
 
 bool SearchSymbols::visit(CPlusPlus::Argument *)
 {
-    return false;
+	return false;
 }
 
 bool SearchSymbols::visit(CPlusPlus::TypenameArgument *)

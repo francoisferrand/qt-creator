@@ -137,6 +137,7 @@ protected:
     virtual bool visit(CPlusPlus::UsingDeclaration *);
     virtual bool visit(CPlusPlus::NamespaceAlias *);
     virtual bool visit(CPlusPlus::Declaration *);
+	virtual bool visit(CPlusPlus::Enumerator *);
     virtual bool visit(CPlusPlus::Argument *);
     virtual bool visit(CPlusPlus::TypenameArgument *);
     virtual bool visit(CPlusPlus::BaseClass *);

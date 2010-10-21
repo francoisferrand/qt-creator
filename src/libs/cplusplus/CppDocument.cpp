@@ -156,6 +156,7 @@ protected:
     virtual bool visit(NamespaceAlias *) { return false; }
     virtual bool visit(Declaration *) { return false; }
     virtual bool visit(Argument *) { return false; }
+	virtual bool visit(Enumerator *) { return false; }
     virtual bool visit(TypenameArgument *) { return false; }
     virtual bool visit(BaseClass *) { return false; }
     virtual bool visit(ForwardClassDeclaration *) { return false; }

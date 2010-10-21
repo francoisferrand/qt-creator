@@ -192,7 +192,7 @@ protected:
     // nothing to do
     virtual bool visit(UsingNamespaceDirective *) { return true; }
     virtual bool visit(UsingDeclaration *) { return true; }
-    virtual bool visit(Argument *) { return true; }
+	virtual bool visit(Argument *) { return true; }
     virtual bool visit(BaseClass *) { return true; }
 
     virtual bool visit(Function *symbol)
@@ -216,11 +216,14 @@ protected:
         return true;
     }
 
+	virtual bool visit(Enumerator * symbol)
+	{
+		addStatic(symbol->name());
+		return true;
+	}
+
     virtual bool visit(Declaration *symbol)
     {
-        if (symbol->enclosingEnum() != 0)
-			addStatic(symbol->name());
-
         if (Function *funTy = symbol->type()->asFunctionType()) {
 			if (funTy->isVirtual())
                 addVirtualMethod(symbol->name());

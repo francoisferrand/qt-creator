@@ -80,6 +80,7 @@ public:
     virtual bool visit(TypenameArgument *) { return true; }
     virtual bool visit(BaseClass *) { return true; }
     virtual bool visit(Enum *) { return true; }
+	virtual bool visit(Enumerator *) { return true; }
     virtual bool visit(Function *) { return true; }
     virtual bool visit(Namespace *) { return true; }
     virtual bool visit(Template *) { return true; }

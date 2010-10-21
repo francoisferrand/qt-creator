@@ -146,6 +146,9 @@ public:
     /// Creates a new Enum symbol.
     Enum *newEnum(unsigned sourceLocation, const Name *name = 0);
 
+	/// Creates a new Enumerator symbol.
+	Enumerator *newEnumerator(unsigned sourceLocation, const Name *name);
+
     /// Creates a new Block symbol.
     Block *newBlock(unsigned sourceLocation);
 

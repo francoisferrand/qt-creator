@@ -47,5 +47,6 @@ SOURCES += cppplugin.cpp \
 
 RESOURCES += cppeditor.qrc
 OTHER_FILES += CppEditor.mimetypes.xml
+QT += script
 
 

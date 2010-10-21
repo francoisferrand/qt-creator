@@ -357,6 +357,9 @@ bool Symbol::isScope() const
 bool Symbol::isEnum() const
 { return asEnum()  != 0; }
 
+bool Symbol::isEnumerator() const
+{ return asEnumerator()  != 0; }
+
 bool Symbol::isFunction() const
 { return asFunction() != 0; }
 

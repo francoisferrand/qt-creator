@@ -536,13 +536,14 @@ void CVSPlugin::contextCommit()
 	ProjectExplorer::Node * node = projectExplorer ? projectExplorer->currentNode() : NULL;
 	QString source = node->path();
 	QFileInfo info(source);
+	const QString sourcePath = info.absolutePath();
 	QString topLevel;
-	if (node && managesDirectory(info.absolutePath(), &topLevel))
+	if (node && managesDirectory(sourcePath, &topLevel))
 	{
 		if (info.isDir())
 			startCommit(source);
 		else
-			startCommit(topLevel, QStringList(QDir(info.absolutePath()).relativeFilePath(source)));
+			startCommit(sourcePath, QStringList(QDir(sourcePath).relativeFilePath(source)));
 	}
 }
 

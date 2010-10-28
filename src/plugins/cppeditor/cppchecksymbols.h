@@ -141,6 +141,7 @@ protected:
 
     virtual bool visit(SimpleNameAST *ast);
     virtual bool visit(DestructorNameAST *ast);
+    virtual bool visit(ParameterDeclarationAST *ast);
     virtual bool visit(QualifiedNameAST *ast);
     virtual bool visit(TemplateIdAST *ast);
 

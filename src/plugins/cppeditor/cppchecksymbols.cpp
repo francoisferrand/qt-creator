@@ -699,6 +699,14 @@ bool CheckSymbols::visit(DestructorNameAST *ast)
     return true;
 }
 
+bool CheckSymbols::visit(ParameterDeclarationAST *ast)
+{
+    accept(ast->type_specifier_list);
+    //the parameter name is just a name!!!
+    accept(ast->expression);
+    return false;
+}
+
 bool CheckSymbols::visit(QualifiedNameAST *ast)
 {
     if (ast->name) {

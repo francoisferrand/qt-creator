@@ -62,38 +62,39 @@ namespace {
 const int MAX_LINECOUNT = 50000;
 }
 
+namespace ProjectExplorer {
+namespace Internal {
+
 class CompileOutputTextEdit: public OutputWindow {
 public:
-	CompileOutputTextEdit()
+	void addTask(const Task &task, int blocknumber)
 	{
-		m_regExp.setPattern("^([^\\(\\)]+[^\\d]):(\\d+):.*$");
-		m_regExp.setMinimal(true);
+		m_tasks.insert(blocknumber, qMakePair(task.file, task.line));
+	}
+
+	void clearTasks()
+	{
+		m_tasks.clear();
 	}
 
 protected:
 	void mouseDoubleClickEvent(QMouseEvent *ev)
 	{
-		//Try to open file when double-clicking on it
-		QString line = cursorForPosition(ev->pos()).block().text();
-		if (m_regExp.indexIn(line) > -1)
-		{
-			QString filename = m_regExp.cap(1);
-			int lineNbr = m_regExp.cap(2).toInt();
-
-			QFileInfo fi(filename);	//TODO: may need to prefix with workingDirectory(currentBuildConfig)
-									//	--> See AbstractMakeStep::slotAddToTaskWindow()
-			if (fi.exists())
-				TextEditor::BaseTextEditor::openEditorAt(fi.canonicalFilePath(), lineNbr);
-			else
-				QPlainTextEdit::mouseDoubleClickEvent(ev);
-		}
+		int line = cursorForPosition(ev->pos()).block().blockNumber();
+		QPair<QString,int> userdata = m_tasks.value(line);
+		if (!userdata.first.isEmpty())
+			TextEditor::BaseTextEditor::openEditorAt(userdata.first, userdata.second);
 		else
 			QPlainTextEdit::mouseDoubleClickEvent(ev);
 	}
 
 private:
 	QRegExp m_regExp;
+	QHash<unsigned int, QPair<QString,int> > m_tasks;
 };
+
+}
+}
 
 CompileOutputWindow::CompileOutputWindow(BuildManager * /*bm*/)
 {
@@ -216,7 +217,9 @@ void CompileOutputWindow::registerPositionOf(const Task &task)
     int blocknumber = m_outputWindow->blockCount();
     if (blocknumber > MAX_LINECOUNT)
         return;
+
     m_taskPositions.insert(task.taskId, blocknumber);
+    m_outputWindow->addTask(task, blocknumber);
 }
 
 bool CompileOutputWindow::knowsPositionOf(const Task &task)

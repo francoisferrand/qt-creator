@@ -53,6 +53,7 @@ class Task;
 namespace Internal {
 
 class ShowOutputTaskHandler;
+class CompileOutputTextEdit;
 
 class CompileOutputWindow : public Core::IOutputPane
 {
@@ -84,7 +85,7 @@ public:
     void showPositionOf(const Task &task);
 
 private:
-    OutputWindow *m_outputWindow;
+    CompileOutputTextEdit *m_outputWindow;
     QHash<unsigned int, int> m_taskPositions;
     ShowOutputTaskHandler * m_handler;
 };

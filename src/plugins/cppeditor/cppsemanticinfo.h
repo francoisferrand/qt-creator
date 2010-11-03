@@ -54,7 +54,8 @@ public:
         StaticUse,
         VirtualMethodUse,
 		FunctionUse,
-		EnumUse
+		EnumUse,
+		MacroUse
     };
 
     typedef QHash<CPlusPlus::Symbol *, QList<Use> > LocalUseMap;

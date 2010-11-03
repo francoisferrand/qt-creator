@@ -1682,6 +1682,8 @@ void CPPEditorWidget::setFontSettings(const TextEditor::FontSettings &fs)
             fs.toTextCharFormat(QLatin1String(TextEditor::Constants::C_VIRTUAL_METHOD));
     m_semanticHighlightFormatMap[SemanticInfo::FunctionUse] =
             fs.toTextCharFormat(QLatin1String(TextEditor::Constants::C_FUNCTION));
+    m_semanticHighlightFormatMap[SemanticInfo::MacroUse] =
+            fs.toTextCharFormat(QLatin1String(TextEditor::Constants::C_PREPROCESSOR));
     m_keywordFormat = fs.toTextCharFormat(QLatin1String(TextEditor::Constants::C_KEYWORD));
 
     // only set the background, we do not want to modify foreground properties set by the syntax highlighter or the link
@@ -1809,8 +1811,32 @@ void CPPEditorWidget::updateSemanticInfo(const SemanticInfo &semanticInfo)
 
         if (! semanticHighlighterDisabled && semanticInfo.doc) {
             if (Core::EditorManager::instance()->currentEditor() == editor()) {
+                //Get macro uses
+                QList<CheckSymbols::Use> macroUses;
+                foreach(Document::MacroUse macro, semanticInfo.doc->macroUses()) {
+                    const QString name(macro.macro().name());
+
+                    //Filter out QtKeywords
+                    if (CppHighlighter::isQtKeyword(QStringRef(&name)))
+                            continue;
+
+                    //Filter out C++ keywords
+                    SimpleLexer tokenize;
+                    tokenize.setQtMocRunEnabled(false);
+                    tokenize.setObjCEnabled(false);
+                    const QList<Token> tokens = tokenize(name);
+                    if (tokens.length() && (tokens.at(0).isKeyword() || tokens.at(0).isObjCAtKeyword()))
+                            continue;
+
+                    int line, column;
+                    convertPosition(macro.begin(), &line, &column);
+                    column ++;	//Highlighting starts at (column-1) --> compensate here
+                    CheckSymbols::Use use(line, column, macro.macro().name().size(), SemanticInfo::MacroUse);
+                    macroUses.append(use);
+                }
+
                 LookupContext context(semanticInfo.doc, semanticInfo.snapshot);
-                CheckSymbols::Future f = CheckSymbols::go(semanticInfo.doc, context);
+                CheckSymbols::Future f = CheckSymbols::go(semanticInfo.doc, context, macroUses);
                 m_highlighter = f;
                 m_highlightRevision = semanticInfo.revision;
                 m_highlightWatcher.setFuture(m_highlighter);

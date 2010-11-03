@@ -996,6 +996,40 @@ void CPPEditorWidget::updateUsesNow()
     semanticRehighlight();
 }
 
+QList<QTextLayout::FormatRange> CPPEditorWidget::getMacroUsagesForBlock(const QTextBlock &b)
+{
+    QList<QTextLayout::FormatRange> formats;
+    const unsigned blockBegin = b.position();
+    const unsigned blockEnd = b.position()+b.length();
+
+    foreach(Document::MacroUse macro, semanticInfo().doc->macroUses()) {
+        const int macroend = macro.begin() + macro.macro().name().size();
+        if (macroend >= blockBegin && macro.begin() <= blockEnd) {
+            const QString name(macro.macro().name());
+
+            //Filter out QtKeywords
+            if (CppHighlighter::isQtKeyword(QStringRef(&name)))
+                continue;
+
+            //Filter out C++ keywords
+            SimpleLexer tokenize;
+            tokenize.setQtMocRunEnabled(false);
+            tokenize.setObjCEnabled(false);
+            const QList<Token> tokens = tokenize(name);
+            if (tokens.length() && (tokens.at(0).isKeyword() || tokens.at(0).isObjCAtKeyword()))
+                continue;
+
+            QTextLayout::FormatRange formatRange;
+            formatRange.format = m_preprocessorFormat;
+            formatRange.start = macro.begin() >= blockBegin ? macro.begin() - blockBegin : 0;
+            formatRange.length = macro.begin() >= blockBegin ? macroend - macro.begin() : macroend - blockBegin;
+            formats.append(formatRange);
+        }
+    }
+
+    return formats;
+}
+
 void CPPEditorWidget::highlightSymbolUsages(int from, int to)
 {
     if (editorRevision() != m_highlightRevision)
@@ -1024,12 +1058,13 @@ void CPPEditorWidget::highlightSymbolUsages(int from, int to)
         Q_ASSERT(blockNumber < doc->blockCount());
 
         while (m_nextHighlightBlockNumber < blockNumber) {
-            highlighter->setExtraAdditionalFormats(b, QList<QTextLayout::FormatRange>());
+            QList<QTextLayout::FormatRange> formats = getMacroUsagesForBlock(b);
+            highlighter->setExtraAdditionalFormats(b, formats);
             b = b.next();
             ++m_nextHighlightBlockNumber;
         }
 
-        QList<QTextLayout::FormatRange> formats;
+        QList<QTextLayout::FormatRange> formats = getMacroUsagesForBlock(b);
         foreach (const SemanticInfo::Use &use, it.value()) {
             QTextLayout::FormatRange formatRange;
 
@@ -1070,6 +1105,7 @@ void CPPEditorWidget::highlightSymbolUsages(int from, int to)
             formatRange.length = use.length;
             formats.append(formatRange);
         }
+
         highlighter->setExtraAdditionalFormats(b, formats);
         b = b.next();
         ++m_nextHighlightBlockNumber;
@@ -1832,6 +1868,7 @@ void CPPEditorWidget::setFontSettings(const TextEditor::FontSettings &fs)
     m_virtualMethodFormat = fs.toTextCharFormat(QLatin1String(TextEditor::Constants::C_VIRTUAL_METHOD));
     m_keywordFormat = fs.toTextCharFormat(QLatin1String(TextEditor::Constants::C_KEYWORD));
 	m_enumFormat = fs.toTextCharFormat(QLatin1String(TextEditor::Constants::C_ENUM));
+	m_preprocessorFormat = fs.toTextCharFormat(QLatin1String(TextEditor::Constants::C_PREPROCESSOR));
 
     // only set the background, we do not want to modify foreground properties set by the syntax highlighter or the link
     m_occurrencesFormat.clearForeground();

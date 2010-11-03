@@ -253,6 +253,7 @@ private:
 
     SemanticHighlighter::Source currentSource(bool force = false);
 
+    QList<QTextLayout::FormatRange> getMacroUsagesForBlock(const QTextBlock &b);
     void highlightUses(const QList<SemanticInfo::Use> &uses,
                        const SemanticInfo &semanticInfo,
                        QList<QTextEdit::ExtraSelection> *selections);
@@ -296,6 +297,7 @@ private:
 	QTextCharFormat m_functionFormat;
     QTextCharFormat m_virtualMethodFormat;
 	QTextCharFormat m_enumFormat;
+	QTextCharFormat m_preprocessorFormat;
 
     QList<QTextEdit::ExtraSelection> m_renameSelections;
     int m_currentRenameSelection;

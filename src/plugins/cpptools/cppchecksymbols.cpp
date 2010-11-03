@@ -34,6 +34,7 @@
 #include "cpplocalsymbols.h"
 
 #include <cplusplus/Overview.h>
+#include <cplusplus/SimpleLexer.h>
 
 #include <Names.h>
 #include <Literals.h>
@@ -305,17 +306,24 @@ protected:
 
 } // end of anonymous namespace
 
-CheckSymbols::Future CheckSymbols::go(Document::Ptr doc, const LookupContext &context)
+static bool sortByLinePredicate(const CheckSymbols::Use &lhs, const CheckSymbols::Use &rhs)
+{
+    return lhs.line < rhs.line;
+}
+
+CheckSymbols::Future CheckSymbols::go(Document::Ptr doc, const LookupContext &context, const QList<CheckSymbols::Use> & macroUses)
 {
     QTC_ASSERT(doc, return Future());
 
-    return (new CheckSymbols(doc, context))->start();
+    return (new CheckSymbols(doc, context, macroUses))->start();
 }
 
-CheckSymbols::CheckSymbols(Document::Ptr doc, const LookupContext &context)
+CheckSymbols::CheckSymbols(Document::Ptr doc, const LookupContext &context, const QList<CheckSymbols::Use> & macroUses)
     : ASTVisitor(doc->translationUnit()), _doc(doc), _context(context)
-    , _lineOfLastUsage(0)
+    , _lineOfLastUsage(0), _macroUses(macroUses)
 {
+    qSort(_macroUses.begin(), _macroUses.end(), sortByLinePredicate);
+
     CollectSymbols collectTypes(doc, context.snapshot());
 
     _fileName = doc->fileName();
@@ -914,6 +922,11 @@ void CheckSymbols::addUse(const Use &use)
         }
     }
 
+    while(!_macroUses.isEmpty() && _macroUses.first().line <= use.line) {
+            _usages.append(_macroUses.first());
+            _macroUses.pop_front();
+    }
+
     _lineOfLastUsage = qMax(_lineOfLastUsage, use.line);
     _usages.append(use);
 }
@@ -1172,11 +1185,6 @@ bool CheckSymbols::maybeVirtualMethod(const Name *name) const
     }
 
     return false;
-}
-
-static bool sortByLinePredicate(const CheckSymbols::Use &lhs, const CheckSymbols::Use &rhs)
-{
-    return lhs.line < rhs.line;
 }
 
 bool CheckSymbols::maybeFunction(const Name *name) const

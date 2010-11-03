@@ -59,6 +59,8 @@ public:
             qCopy(begin, end, m_formats);
         }
 
+    static bool isQtKeyword(const QStringRef &text);
+
 private:
     void highlightWord(QStringRef word, int position, int length);
     void highlightLine(const QString &line, int position, int length,
@@ -68,7 +70,6 @@ private:
                                  int length);
 
     bool isPPKeyword(const QStringRef &text) const;
-    bool isQtKeyword(const QStringRef &text) const;
 
     QTextCharFormat m_formats[NumCppFormats];
 };

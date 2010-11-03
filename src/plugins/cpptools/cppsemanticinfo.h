@@ -53,7 +53,8 @@ public:
         StaticUse,
         VirtualMethodUse,
         LabelUse,
-		FunctionUse
+		FunctionUse,
+		MacroUse
     };
     typedef TextEditor::SemanticHighlighter::Result Use;
 

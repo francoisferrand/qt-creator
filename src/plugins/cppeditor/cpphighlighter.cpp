@@ -338,7 +338,7 @@ bool CppHighlighter::isPPKeyword(const QStringRef &text) const
     return false;
 }
 
-bool CppHighlighter::isQtKeyword(const QStringRef &text) const
+bool CppHighlighter::isQtKeyword(const QStringRef &text)
 {
     switch (text.length()) {
     case 4:

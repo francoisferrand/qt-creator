@@ -34,6 +34,9 @@
 #include "cpphighlightingsupportinternal.h"
 
 #include <cplusplus/LookupContext.h>
+#include <cplusplus/SimpleLexer.h>
+#include <cplusplus/Token.h>
+#include <texteditor/itexteditor.h>
 
 using namespace CPlusPlus;
 using namespace CppTools;
@@ -48,12 +51,71 @@ CppHighlightingSupportInternal::~CppHighlightingSupportInternal()
 {
 }
 
+static bool isQtKeyword(const QStringRef &text)	//copied from CppHighlighter::isQtKeyword
+{
+	switch (text.length()) {
+	case 4:
+		if (text.at(0) == 'e' && text == QLatin1String("emit"))
+			return true;
+		else if (text.at(0) == 'S' && text == QLatin1String("SLOT"))
+			return true;
+		break;
+
+	case 5:
+		if (text.at(0) == 's' && text == QLatin1String("slots"))
+			return true;
+		break;
+
+	case 6:
+		if (text.at(0) == 'S' && text == QLatin1String("SIGNAL"))
+			return true;
+		break;
+
+	case 7:
+		if (text.at(0) == 's' && text == QLatin1String("signals"))
+			return true;
+		else if (text.at(0) == 'f' && text == QLatin1String("foreach"))
+			return true;
+		else if (text.at(0) == 'f' && text == QLatin1String("forever"))
+			return true;
+		break;
+
+	default:
+		break;
+	}
+	return false;
+}
+
 QFuture<CppHighlightingSupport::Use> CppHighlightingSupportInternal::highlightingFuture(
         const Document::Ptr &doc,
         const Snapshot &snapshot) const
 {
+	//Get macro uses
+	QList<CheckSymbols::Use> macroUses;
+	foreach(Document::MacroUse macro, doc->macroUses()) {
+		const QString name(macro.macro().name());
+
+		//Filter out QtKeywords
+		if (isQtKeyword(QStringRef(&name)))
+			continue;
+
+		//Filter out C++ keywords
+		SimpleLexer tokenize;
+		tokenize.setQtMocRunEnabled(false);
+		tokenize.setObjCEnabled(false);
+		const QList<Token> tokens = tokenize(name);
+		if (tokens.length() && (tokens.at(0).isKeyword() || tokens.at(0).isObjCAtKeyword()))
+			continue;
+
+		int line, column;
+		editor()->convertPosition(macro.begin(), &line, &column);
+		column ++;	//Highlighting starts at (column-1) --> compensate here
+		CheckSymbols::Use use(line, column, macro.macro().name().size(), SemanticInfo::MacroUse);
+		macroUses.append(use);
+	}
+
     LookupContext context(doc, snapshot);
-    return CheckSymbols::go(doc, context);
+	return CheckSymbols::go(doc, context, macroUses);
 }
 
 CppHighlightingSupportInternalFactory::~CppHighlightingSupportInternalFactory()

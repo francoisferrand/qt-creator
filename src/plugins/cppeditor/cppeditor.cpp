@@ -1534,6 +1534,17 @@ CPPEditorWidget::Link CPPEditorWidget::findLinkAt(const QTextCursor &cursor,
         tc.setPosition(endOfToken);
     }
 
+    // Handle macro uses
+    const Document::MacroUse *use = doc->findMacroUseAt(endOfToken - 1);
+    if (use && use->macro().fileName() != QLatin1String("<configuration>")) {
+        const Macro &macro = use->macro();
+        link.fileName = macro.fileName();
+        link.line = macro.line();
+        link.begin = use->begin();
+        link.end = use->end();
+        return link;
+    }
+
     // Find the last symbol up to the cursor position
     Scope *scope = doc->scopeAt(line, column);
     if (!scope)

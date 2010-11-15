@@ -176,7 +176,6 @@ public:
 
     virtual void paste(); // reimplemented from BaseTextEditor
     virtual void cut(); // reimplemented from BaseTextEditor
-	virtual QString autoComplete(QTextCursor &cursor, const QString &textToInsert) const;// reimplemented from BaseTextEditor
 
     CppTools::CppModelManagerInterface *modelManager() const;
 

@@ -41,6 +41,7 @@ static const char * const completionTriggerKey = "CompletionTrigger";
 static const char * const autoInsertBracesKey = "AutoInsertBraces";
 static const char * const partiallyCompleteKey = "PartiallyComplete";
 static const char * const spaceAfterFunctionNameKey = "SpaceAfterFunctionName";
+static const char * const surroundSelectionWithSymbolKey = "SurroundSelectionWithSymbol";
 
 using namespace TextEditor;
 
@@ -50,6 +51,7 @@ CompletionSettings::CompletionSettings()
     , m_autoInsertBrackets(true)
     , m_partiallyComplete(true)
     , m_spaceAfterFunctionName(false)
+    , m_surroundSelectionWithSymbol(true)
 {
 }
 
@@ -65,6 +67,7 @@ void CompletionSettings::toSettings(const QString &category, QSettings *s) const
     s->setValue(QLatin1String(autoInsertBracesKey), m_autoInsertBrackets);
     s->setValue(QLatin1String(partiallyCompleteKey), m_partiallyComplete);
     s->setValue(QLatin1String(spaceAfterFunctionNameKey), m_spaceAfterFunctionName);
+    s->setValue(QLatin1String(surroundSelectionWithSymbolKey), m_surroundSelectionWithSymbol);
     s->endGroup();
 }
 
@@ -82,6 +85,7 @@ void CompletionSettings::fromSettings(const QString &category, const QSettings *
     m_autoInsertBrackets = s->value(group + QLatin1String(autoInsertBracesKey), m_autoInsertBrackets).toBool();
     m_partiallyComplete = s->value(group + QLatin1String(partiallyCompleteKey), m_partiallyComplete).toBool();
     m_spaceAfterFunctionName = s->value(group + QLatin1String(spaceAfterFunctionNameKey), m_spaceAfterFunctionName).toBool();
+    m_surroundSelectionWithSymbol = s->value(group + QLatin1String(surroundSelectionWithSymbolKey), m_spaceAfterFunctionName).toBool();
 }
 
 bool CompletionSettings::equals(const CompletionSettings &cs) const
@@ -91,5 +95,6 @@ bool CompletionSettings::equals(const CompletionSettings &cs) const
         && m_autoInsertBrackets == cs.m_autoInsertBrackets
         && m_partiallyComplete == cs.m_partiallyComplete
         && m_spaceAfterFunctionName == cs.m_spaceAfterFunctionName
+        && m_surroundSelectionWithSymbol == cs.m_surroundSelectionWithSymbol
         ;
 }

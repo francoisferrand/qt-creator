@@ -72,6 +72,7 @@ public:
     bool m_autoInsertBrackets;
     bool m_partiallyComplete;
     bool m_spaceAfterFunctionName;
+    bool m_surroundSelectionWithSymbol;
 };
 
 inline bool operator==(const CompletionSettings &t1, const CompletionSettings &t2) { return t1.equals(t2); }

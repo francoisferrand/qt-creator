@@ -102,13 +102,15 @@ QWidget *CompletionSettingsPage::createPage(QWidget *parent)
     m_page->autoInsertBrackets->setChecked(settings.m_autoInsertBrackets);
     m_page->partiallyComplete->setChecked(settings.m_partiallyComplete);
     m_page->spaceAfterFunctionName->setChecked(settings.m_spaceAfterFunctionName);
+    m_page->surroundSelection->setChecked(settings.m_surroundSelectionWithSymbol);
 
     if (m_searchKeywords.isEmpty()) {
         QTextStream(&m_searchKeywords) << m_page->caseSensitivityLabel->text()
                 << ' ' << m_page->autoInsertBrackets->text()
                 << ' ' << m_page->completionTriggerLabel->text()
                 << ' ' << m_page->partiallyComplete->text()
-                << ' ' << m_page->spaceAfterFunctionName->text();
+                << ' ' << m_page->spaceAfterFunctionName->text()
+                << ' ' << m_page->surroundSelection->text();
         m_searchKeywords.remove(QLatin1Char('&'));
     }
 
@@ -123,6 +125,7 @@ void CompletionSettingsPage::apply()
     settings.m_autoInsertBrackets = m_page->autoInsertBrackets->isChecked();
     settings.m_partiallyComplete = m_page->partiallyComplete->isChecked();
     settings.m_spaceAfterFunctionName = m_page->spaceAfterFunctionName->isChecked();
+    settings.m_surroundSelectionWithSymbol = m_page->surroundSelection->isChecked();
 
     TextEditor::TextEditorSettings::instance()->setCompletionSettings(settings);
 }

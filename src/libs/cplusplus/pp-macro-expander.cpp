@@ -103,6 +103,7 @@ const char *MacroExpander::operator()(const char *first, const char *last,
 const char *MacroExpander::expand(const char *__first, const char *__last,
                                   QByteArray *__result)
 {
+    const char *lastpaste = NULL;
     const char *start = __first;
     __first = skip_blanks (__first, __last);
     lines = skip_blanks.lines;
@@ -145,19 +146,30 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 for (const char *it = skip_whitespaces (actual_begin, actual_end);
                         it != actual_end; ++it)
                 {
-                    if (*it == '"' || *it == '\\')
-                    {
+                    switch(*it) {
+                    case BeginArgumentMarker:
+                        it+=ArgumentWidth;  //skip argument index
+                        break;
+
+                    case EndArgumentMarker:
+                        break;
+
+                    case '"':
+                    case '\\':
                         __result->append('\\');
                         __result->append(*it);
-                    }
-                    else if (*it == '\n')
-                    {
+                        break;
+
+                    case '\n':
                         __result->append('"');
                         __result->append('\n');
                         __result->append('"');
-                    }
-                    else
+                        break;
+
+                    default:
                         __result->append(*it);
+                        break;
+                    }
                 }
 
                 __result->append('\"');
@@ -223,6 +235,8 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
             const char *name_end = skip_identifier (__first, __last);
             __first = name_end; // advance
 
+            const bool pastebefore = (name_begin == lastpaste);
+
             // search for the paste token
             const char *next = skip_blanks (__first, __last);
             bool paste = false;
@@ -233,7 +247,7 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 if (x != __last && *x == '#' && (x + 1) != __last && x[1] == '#') {
                     need_comma = true;
                     paste = true;
-                    __first = skip_blanks(x + 2, __last);
+                    lastpaste = __first = skip_blanks(x + 2, __last);
                 }
             }
 
@@ -242,7 +256,7 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 paste = true;
                 ++next;
                 if (next != __last && *next == '#')
-                    __first = skip_blanks(++next, __last);
+                    lastpaste = __first = skip_blanks(++next, __last);
             }
 
             const QByteArray fast_name(name_begin, name_end - name_begin);
@@ -253,12 +267,23 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 const char *end = begin + actual->size ();
                 if (paste) {
                     for (--end; end != begin - 1; --end) {
-                        if (! pp_isspace(*end))
+                        if (end-ArgumentWidth >= begin-1 && *(end-ArgumentWidth)==BeginArgumentMarker)
+                            end-=ArgumentWidth;
+                        else if (*end != EndArgumentMarker && !pp_isspace(*end))
                             break;
                     }
                     ++end;
                 }
-                __result->append(begin, end - begin);
+                if (paste || pastebefore) {
+                    for(;begin < end;begin++) {
+                        if (*begin == BeginArgumentMarker)
+                            begin+=ArgumentWidth;
+                        else if (*begin!=EndArgumentMarker)
+                            __result->append(*begin);
+                    }
+                }
+                else
+                    __result->append(begin, end-begin);
                 if (need_comma)
                     __result->append(',');
                 continue;
@@ -352,30 +377,38 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
 
             // function like macro
             const char *arg_it = skip_whitespaces (__first, __last);
+            bool endArgument = false;
+            if (arg_it != __last && *arg_it == EndArgumentMarker)
+            {
+                const int lines = skip_whitespaces.lines;
+                arg_it = skip_whitespaces (arg_it+1, __last);
+                skip_whitespaces.lines += lines;
+                endArgument = true;
+            }
 
             if (arg_it == __last || *arg_it != '(')
             {
                 __result->append(name_begin, name_end - name_begin);
+                if (endArgument)
+                    __result->append(EndArgumentMarker);
                 lines += skip_whitespaces.lines;
                 __first = arg_it;
                 continue;
             }
 
             QVector<QByteArray> actuals;
-            QVector<MacroArgumentReference> actuals_ref;
             actuals.reserve (5);
             ++arg_it; // skip '('
 
             MacroExpander expand_actual (env, frame);
 
-            const char *arg_end = skip_argument_variadics (actuals, macro, arg_it, __last);
-            if (arg_it != arg_end)
+            const char *arg_end = skip_argument(arg_it, __last);
+            if (arg_it != arg_end || (arg_end!=__last && *arg_end == ','))
             {
-                actuals_ref.append(MacroArgumentReference(start_offset + (arg_it-start), arg_end - arg_it));
-                const QByteArray actual (arg_it, arg_end - arg_it);
+                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it);
                 QByteArray expanded;
                 expand_actual (actual.constBegin (), actual.constEnd (), &expanded);
-                actuals.push_back (expanded);
+                pushActuals(actuals, macro, expanded);
                 arg_it = arg_end;
             }
 
@@ -383,17 +416,19 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
             {
                 ++arg_it; // skip ','
 
-                arg_end = skip_argument_variadics (actuals, macro, arg_it, __last);
-                actuals_ref.append(MacroArgumentReference(start_offset + (arg_it-start), arg_end - arg_it));
-                const QByteArray actual (arg_it, arg_end - arg_it);
+                arg_end = skip_argument(arg_it, __last);
+                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it);
                 QByteArray expanded;
                 expand_actual (actual.constBegin (), actual.constEnd (), &expanded);
-                actuals.push_back (expanded);
+                pushActuals(actuals, macro, expanded);
                 arg_it = arg_end;
             }
 
             if (! (arg_it != __last && *arg_it == ')'))
                 return __last;
+
+            if (endArgument)
+                __result->append(EndArgumentMarker);
 
             ++arg_it; // skip ')'
             __first = arg_it;
@@ -409,6 +444,45 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
     }
 
     return __first;
+}
+
+
+QByteArray MacroExpander::argumentMarker(int number)
+{
+    QByteArray buf(ArgumentWidth, '0');
+    char * ptr = buf.data()+buf.size()-1;
+    for(int i=ArgumentWidth-1; i>=0 && number; i--) {
+        const int val = number % 16;
+        number /= 16;
+        *ptr-- = val < 10 ? '0' + val : 'A' + val - 10;
+    }
+    return buf;
+}
+
+void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, const QByteArray& expanded)
+{
+    if (__macro->isVariadic() && actuals.count() == __macro->formals().count()) {
+        //already enough params --> append to the last one
+        QByteArray& b = actuals.last();
+        b.append(",");
+        b.append(expanded.trimmed());
+    }
+    else {
+        const char * __first = expanded.constData();
+        const char * __last = __first + expanded.length();
+        const char * arg_it = __first;
+
+        const char *arg_end = skip_argument_variadics(actuals, __macro, arg_it, __last);
+        actuals.push_back(QByteArray(arg_it, arg_end - arg_it).trimmed());
+        arg_it = arg_end;
+
+        while(arg_it != __last) {
+            ++arg_it; // skip ','
+            const char *arg_end = skip_argument_variadics(actuals, __macro, arg_it, __last);
+            actuals.push_back(QByteArray(arg_it, arg_end - arg_it).trimmed());
+            arg_it = arg_end;
+        }
+    }
 }
 
 const char *MacroExpander::skip_argument_variadics (QVector<QByteArray> const &__actuals,

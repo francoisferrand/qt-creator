@@ -83,6 +83,14 @@ class MacroExpander
     const QByteArray *resolve_formal(const QByteArray &name);
 
 public:
+    static QByteArray argumentMarker(int number);
+    enum {
+        BeginArgumentMarker =   1,
+        EndArgumentMarker =     2,
+
+        ArgumentWidth =         2
+    };
+
     explicit MacroExpander(Environment *env, pp_frame *frame = 0, Client *client = 0, unsigned start_offset = 0);
 
     const char *operator()(const char *first, const char *last,
@@ -98,6 +106,8 @@ public:
     const char *skip_argument_variadics(const QVector<QByteArray> &actuals,
                                          Macro *macro,
                                          const char *first, const char *last);
+    void pushActuals(QVector<QByteArray> & actuals, Macro *__macro, const QByteArray& expanded);
+
 
 public: // attributes
     int lines;

@@ -587,7 +587,7 @@ Preprocessor::State Preprocessor::createStateFromSource(const QByteArray &source
     return state;
 }
 
-void Preprocessor::processNewline(bool force)
+void Preprocessor::processNewline(bool force, int extraLines)
 {
     if (_dot != _tokens.constBegin()) {
         TokenIterator prevTok = _dot - 1;
@@ -605,23 +605,25 @@ void Preprocessor::processNewline(bool force)
         }
     }
 
-    if (! force && env->currentLine == _dot->lineno)
+    unsigned lineno = _dot->lineno+extraLines;
+
+    if (! force && env->currentLine == lineno)
         return;
 
-    if (force || env->currentLine > _dot->lineno) {
+    if (force || env->currentLine > lineno) {
         out("\n# ");
-        out(QByteArray::number(_dot->lineno));
+        out(QByteArray::number(lineno));
         out(' ');
         out('"');
         out(env->currentFile.toUtf8());
         out('"');
         out('\n');
     } else {
-        for (unsigned i = env->currentLine; i < _dot->lineno; ++i)
+        for (unsigned i = env->currentLine; i < lineno; ++i)
             out('\n');
     }
 
-    env->currentLine = _dot->lineno;
+    env->currentLine = lineno;
 }
 
 void Preprocessor::processSkippingBlocks(bool skippingBlocks,
@@ -652,26 +654,31 @@ bool Preprocessor::markGeneratedTokens(bool markGeneratedTokens,
                                        TokenIterator dot)
 {
     bool previous = _markGeneratedTokens;
+    if (previous != markGeneratedTokens) {
+        if (! dot)
+            dot = _dot;
+        const int pos = markGeneratedTokens ? dot->begin() : (dot - 1)->end();
+        this->markGeneratedTokens(markGeneratedTokens, pos, dot->lineno - _dot->lineno, dot->f.newline);
+    }
+    return previous;
+}
+
+bool Preprocessor::markGeneratedTokens(bool markGeneratedTokens, int position, int extraLines, bool newline)
+{
+    bool previous = _markGeneratedTokens;
     _markGeneratedTokens = markGeneratedTokens;
 
     if (previous != _markGeneratedTokens) {
-        if (! dot)
-            dot = _dot;
 
         if (_markGeneratedTokens)
             out("\n#gen true");
         else
             out("\n#gen false");
 
-        processNewline(/*force = */ true);
+        processNewline(/*force = */ true, extraLines);
 
         const char *begin = _source.constBegin();
-        const char *end   = begin;
-
-        if (markGeneratedTokens)
-            end += dot->begin();
-        else
-            end += (dot - 1)->end();
+        const char *end   = begin + position;
 
         const char *it = end - 1;
         for (; it != begin - 1; --it) {
@@ -683,12 +690,11 @@ bool Preprocessor::markGeneratedTokens(bool markGeneratedTokens,
         for (; it != end; ++it) {
             if (! pp_isspace(*it))
                 out(' ');
-
             else
                 out(*it);
         }
 
-        if (! markGeneratedTokens && dot->f.newline)
+        if (! markGeneratedTokens && newline)
             processNewline(/*force = */ true);
     }
 
@@ -992,7 +998,7 @@ void Preprocessor::expandObjectLikeMacro(TokenIterator identifierToken,
 
 void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
                                            Macro *m,
-                                           const QVector<MacroArgumentReference> &actuals)
+                                           const QVector<MacroArgumentReference> &actuals_)
 {
     const char *beginOfText = startOfToken(*identifierToken);
     const char *endOfText = endOfToken(*_dot);
@@ -1004,11 +1010,74 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
                                         endOfText - beginOfText);
 
         client->startExpandingMacro(identifierToken->offset,
-                                    *m, text, false, actuals);
+									*m, text, false, actuals_);
     }
 
+    //Count line offset from the macro to the beginning of 'current' token (_dot)
     const bool was = markGeneratedTokens(true, identifierToken);
-    expand(beginOfText, endOfText, _result);
+    if (!was) {
+        //Generate parameter, marking each identifier
+        QVector<TokenIterator> identifiers;
+        identifiers.reserve(5);
+        QByteArray params;
+        params.reserve(endOfText-beginOfText + (MacroExpander::ArgumentWidth+2)*identifiers.capacity());
+        params.append(beginOfText, startOfToken(identifierToken[2])-beginOfText);
+        for(TokenIterator i = identifierToken+2; i<_dot; i++) {
+            const QByteArray spell = tokenSpell(*i);
+            if (i->is(T_IDENTIFIER) && identifiers.count()<(1<<MacroExpander::ArgumentWidth*4) && !env->isBuiltinMacro(spell) && !env->resolve(spell)) {
+                params.append(MacroExpander::BeginArgumentMarker);
+                params.append(MacroExpander::argumentMarker(identifiers.count()));
+                params.append(spell);
+                params.append(MacroExpander::EndArgumentMarker);
+                identifiers.append(i);
+            }
+            else
+                params.append(spell);
+        }
+
+        //Expand the macro
+        QByteArray result;
+        result.reserve(256);
+        expand(params, &result);
+
+        //Replace markers in the expanded macro
+        const char * ptr = result.constData();
+        const char * end = ptr + result.length();
+        while(ptr < end) {
+            switch(*ptr)
+            {
+            case MacroExpander::BeginArgumentMarker:
+                if (ptr+MacroExpander::ArgumentWidth < end) {
+                    bool ok;
+                    int argIdx = QByteArray(++ptr, MacroExpander::ArgumentWidth).toInt(&ok, 16);
+                    ptr += MacroExpander::ArgumentWidth-1;
+                    if (ok && ptr[1] != MacroExpander::EndArgumentMarker && argIdx >= 0 && argIdx < identifiers.count() && identifiers.at(argIdx)) {
+                        TokenIterator i = identifiers.at(argIdx);
+                        identifiers[argIdx] = NULL;
+                        (void)markGeneratedTokens(was, i->begin(), i->lineno - _dot->lineno);
+                        out(QByteArray(_source.constData()+i->begin(), i->length()));
+                        (void)markGeneratedTokens(true, i->end(), i->lineno - _dot->lineno);
+                        ptr += i->length();
+                    }
+                }
+                break;
+
+            case MacroExpander::EndArgumentMarker:
+                break;
+
+            default:
+                out(*ptr);
+                break;
+            }
+            ptr++;
+        }
+    }
+    else {
+        QByteArray result;
+        result.reserve(256);
+        expand(beginOfText, endOfText, &result);
+        out(result);
+    }
     (void) markGeneratedTokens(was);
 
     if (client)
@@ -1178,18 +1247,22 @@ void Preprocessor::processDefine(TokenIterator firstToken, TokenIterator lastTok
     macro.setLength(endOfToken(lastToken[- 1]) - startOfToken(*firstToken));
     ++tk; // skip T_IDENTIFIER
 
+    bool hasIdentifier = false;
     if (tk->is(T_LPAREN) && ! tk->f.whitespace) {
         // a function-like macro definition
         macro.setFunctionLike(true);
 
         ++tk; // skip T_LPAREN
         if (tk->is(T_IDENTIFIER)) {
+            hasIdentifier = true;
             macro.addFormal(tokenText(*tk));
             ++tk; // skip T_IDENTIFIER
             while (tk->is(T_COMMA)) {
                 ++tk;// skip T_COMMA
-                if (tk->isNot(T_IDENTIFIER))
+                if (tk->isNot(T_IDENTIFIER)) {
+                    hasIdentifier = false;
                     break;
+                }
                 macro.addFormal(tokenText(*tk));
                 ++tk; // skip T_IDENTIFIER
             }
@@ -1197,6 +1270,8 @@ void Preprocessor::processDefine(TokenIterator firstToken, TokenIterator lastTok
 
         if (tk->is(T_DOT_DOT_DOT)) {
             macro.setVariadic(true);
+            if (!hasIdentifier)
+                macro.addFormal("__VA_ARGS__");
             ++tk; // skip T_DOT_DOT_DOT
         }
 

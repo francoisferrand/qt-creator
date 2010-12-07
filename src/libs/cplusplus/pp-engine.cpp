@@ -462,7 +462,8 @@ Preprocessor::Preprocessor(Client *client, Environment *env)
       _dot(_tokens.end()),
       _result(0),
       _markGeneratedTokens(false),
-      _expandMacros(true)
+      _expandMacros(true),
+      _macroExpansionLevel(0)
 {
     resetIfLevel ();
 }
@@ -716,7 +717,9 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
         if (_dot->f.joined)
             out("\\");
 
-        processNewline();
+        if (_macroExpansionLevel == 0) {
+            processNewline();
+        }
 
         if (_dot->is(T_EOF_SYMBOL)) {
             break;
@@ -828,6 +831,7 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
 
     env->currentFile = previousFileName;
     env->currentLine = previousCurrentLine;
+
     _result = previousResult;
 
     iflevel = previousIfLevel;
@@ -914,18 +918,20 @@ Macro *Preprocessor::processObjectLikeMacro(TokenIterator identifierToken,
             return m;
     }
 
-    const bool was = markGeneratedTokens(true, identifierToken);
+    const bool was = (_macroExpansionLevel == 0 ? markGeneratedTokens(true, identifierToken) : false);
     out(tmp);
-    (void) markGeneratedTokens(was);
+    if (_macroExpansionLevel == 0)
+        (void) markGeneratedTokens(was);
     return 0;
 }
 
 void Preprocessor::expandBuiltinMacro(TokenIterator identifierToken,
                                       const QByteArray &spell)
 {
-    const bool was = markGeneratedTokens(true, identifierToken);
+    const bool was = (_macroExpansionLevel == 0 ? markGeneratedTokens(true, identifierToken) : false);
     expand(spell, _result);
-    (void) markGeneratedTokens(was);
+    if (_macroExpansionLevel == 0)
+        (void) markGeneratedTokens(was);
 }
 
 void Preprocessor::expandObjectLikeMacro(TokenIterator identifierToken,
@@ -961,11 +967,28 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
         client->startExpandingMacro(identifierToken->offset,
                                     *m, text, false, actuals);
     }
+    const bool was = (_macroExpansionLevel == 0 ? markGeneratedTokens(true, identifierToken) : false);
 
-    const bool was = markGeneratedTokens(true, identifierToken);
-    expand(beginOfText, endOfText, _result);
-    (void) markGeneratedTokens(was);
+    if (_macroExpansionLevel < 3) {
+        QByteArray rawresult;
+        rawresult.reserve(256);
+        expand(beginOfText, endOfText, &rawresult);
 
+        _macroExpansionLevel++;
+
+        Client * previousclient = client;
+        client = NULL;  //prevent notifications to client
+        preprocess(env->currentFile, rawresult, _result);
+        client = previousclient;
+
+        _macroExpansionLevel--;
+    }
+    else {
+        expand(beginOfText, endOfText, _result);
+    }
+
+    if (_macroExpansionLevel == 0)
+       (void) markGeneratedTokens(was);
     if (client)
         client->stopExpandingMacro(_dot->offset, *m);
 }
@@ -1133,18 +1156,22 @@ void Preprocessor::processDefine(TokenIterator firstToken, TokenIterator lastTok
     macro.setLength(endOfToken(lastToken[- 1]) - startOfToken(*firstToken));
     ++tk; // skip T_IDENTIFIER
 
+    bool hasIdentifier = false;
     if (tk->is(T_LPAREN) && ! tk->f.whitespace) {
         // a function-like macro definition
         macro.setFunctionLike(true);
 
         ++tk; // skip T_LPAREN
         if (tk->is(T_IDENTIFIER)) {
+            hasIdentifier = true;
             macro.addFormal(tokenText(*tk));
             ++tk; // skip T_IDENTIFIER
             while (tk->is(T_COMMA)) {
                 ++tk;// skip T_COMMA
-                if (tk->isNot(T_IDENTIFIER))
+                if (tk->isNot(T_IDENTIFIER)) {
+                    hasIdentifier = false;
                     break;
+                }
                 macro.addFormal(tokenText(*tk));
                 ++tk; // skip T_IDENTIFIER
             }
@@ -1152,6 +1179,8 @@ void Preprocessor::processDefine(TokenIterator firstToken, TokenIterator lastTok
 
         if (tk->is(T_DOT_DOT_DOT)) {
             macro.setVariadic(true);
+            if (!hasIdentifier)
+                macro.addFormal("__VA_ARGS__");
             ++tk; // skip T_DOT_DOT_DOT
         }
 

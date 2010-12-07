@@ -197,6 +197,8 @@ private:
 
     QString _originalSource;
     bool _expandMacros;
+
+    int _macroExpansionLevel;
 };
 
 } // namespace CPlusPlus

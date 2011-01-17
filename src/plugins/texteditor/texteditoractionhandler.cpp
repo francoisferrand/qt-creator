@@ -261,7 +261,6 @@ void TextEditorActionHandler::createActions()
 
     m_selectBlockUpAction = new QAction(tr("Select Block Up"), this);
     command = am->registerAction(m_selectBlockUpAction, Constants::SELECT_BLOCK_UP, m_contextId);
-    command->setDefaultKeySequence(QKeySequence(tr("Ctrl+U")));
     connect(m_selectBlockUpAction, SIGNAL(triggered()), this, SLOT(selectBlockUp()));
     advancedMenu->addAction(command, Core::Constants::G_EDIT_BLOCKS);
 

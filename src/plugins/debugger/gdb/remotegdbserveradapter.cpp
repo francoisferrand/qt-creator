@@ -35,6 +35,7 @@
 
 #include "debuggerstringutils.h"
 #include "gdbengine.h"
+#include "breakhandler.h"
 
 #include <utils/qtcassert.h>
 #include <utils/fancymainwindow.h>
@@ -173,20 +174,32 @@ void RemoteGdbServerAdapter::setupInferior()
         QFileInfo fi(startParameters().executable);
         fileName = fi.absoluteFilePath();
     }
-    const QByteArray sysRoot = startParameters().sysRoot.toLocal8Bit();
-    const QByteArray remoteArch = startParameters().remoteArchitecture.toLatin1();
-    const QByteArray solibPath =
-         QFileInfo(startParameters().dumperLibrary).path().toLocal8Bit();
-    const QString args = startParameters().processArgs.join(_(" "));
 
-    if (!remoteArch.isEmpty())
-        m_engine->postCommand("set architecture " + remoteArch);
-    if (!sysRoot.isEmpty())
-        m_engine->postCommand("set sysroot " + sysRoot);
-    if (!solibPath.isEmpty())
-        m_engine->postCommand("set solib-search-path " + solibPath);
-    if (!args.isEmpty())
-        m_engine->postCommand("-exec-arguments " + args.toLocal8Bit());
+	if (startParameters().remoteArchitecture != _("android"))
+	{
+		const QByteArray sysRoot = startParameters().sysRoot.toLocal8Bit();
+		const QByteArray remoteArch = startParameters().remoteArchitecture.toLatin1();
+		const QByteArray solibPath = QFileInfo(startParameters().dumperLibrary).path().toLocal8Bit();
+		const QString args = startParameters().processArgs.join(_(" "));
+
+		if (!remoteArch.isEmpty())
+			m_engine->postCommand("set architecture " + remoteArch);
+		if (!sysRoot.isEmpty())
+			m_engine->postCommand("set sysroot " + sysRoot);
+		if (!solibPath.isEmpty())
+			m_engine->postCommand("set solib-search-path " + solibPath);
+		if (!args.isEmpty())
+			m_engine->postCommand("-exec-arguments " + args.toLocal8Bit());
+	}
+	else
+	{
+		const QByteArray sysRoot = startParameters().sysRoot.toLocal8Bit();
+		const QByteArray solibPath = startParameters().sysRoot.toLocal8Bit() + "/../lib";
+		m_engine->postCommand("set sysroot " + sysRoot);
+		m_engine->postCommand("set solib-search-path " + solibPath);
+		m_engine->postCommand("handle SIGUSR2 noprint");
+		m_engine->breakHandler()->breakByFunction(_("pal_assert"));
+	}
 
     // This has to be issued before 'target remote'. On pre-7.0 the
     // command is not present and will result in ' No symbol table is
@@ -270,11 +283,25 @@ void RemoteGdbServerAdapter::runEngine()
     m_engine->continueInferiorInternal();
 }
 
+#include <sys/types.h>
+#include <signal.h>
+
 void RemoteGdbServerAdapter::interruptInferior()
 {
-    // FIXME: On some gdb versions like git 170ffa5d7dd this produces
-    // >810^error,msg="mi_cmd_exec_interrupt: Inferior not executing."
-    m_engine->postCommand("-exec-interrupt", GdbEngine::Immediate);
+	if (startParameters().remoteArchitecture != _("android"))
+	{
+		// FIXME: On some gdb versions like git 170ffa5d7dd this produces
+		// >810^error,msg="mi_cmd_exec_interrupt: Inferior not executing."
+		m_engine->postCommand("-exec-interrupt", GdbEngine::Immediate);
+	}
+	else
+	{
+		//Only for Linux/Mac... What to do on Windows? on Cygwin?
+		//Dependent on GDB version: exec-interrupt may work for gdb7 ?
+		int pid = static_cast<LocalGdbProcess *>(gdbProc())->pid();
+		if (pid > 0)
+			kill(pid, SIGINT);
+	}
 }
 
 void RemoteGdbServerAdapter::shutdownInferior()

@@ -1564,7 +1564,7 @@ void GdbEngine::handleStop2()
     if (supportsThreads()) {
         if (m_gdbAdapter->isTrkAdapter()) {
             m_gdbAdapter->trkReloadThreads();
-        } else if (m_isMacGdb) {
+        } else if (m_isMacGdb || m_gdbVersion < 70100) {
             postCommand("-thread-list-ids", Discardable,
                 CB(handleThreadListIds), m_currentThreadId);
         } else {

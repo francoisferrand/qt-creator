@@ -1488,7 +1488,7 @@ void GdbEngine::handleStop1(const GdbMi &data)
         int currentId = data.findChild("thread-id").data().toInt();
         if (m_gdbAdapter->isTrkAdapter()) {
             m_gdbAdapter->trkReloadThreads();
-        } else if (m_isMacGdb) {
+        } else if (m_isMacGdb || m_gdbVersion < 70100) {
             postCommand("-thread-list-ids", Discardable,
                 CB(handleThreadListIds), currentId);
         } else {

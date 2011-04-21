@@ -59,6 +59,8 @@ public:
     virtual void setEnvironment(const QStringList &env);
     virtual void setWorkingDirectory(const QString &dir);
 
+	int	pid() const { return m_gdbProc.pid(); }
+
 private:
     QProcess m_gdbProc;
 };

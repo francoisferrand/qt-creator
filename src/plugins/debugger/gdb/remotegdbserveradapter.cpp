@@ -38,6 +38,7 @@
 #include "debuggerstringutils.h"
 #include "gdbengine.h"
 #include "gdbmi.h"
+#include "breakhandler.h"
 
 #include <utils/qtcassert.h>
 #include <utils/fancymainwindow.h>
@@ -170,22 +171,34 @@ void RemoteGdbServerAdapter::setupInferior()
         QFileInfo fi(sp.executable);
         fileName = fi.absoluteFilePath();
     }
-    const QByteArray sysroot = sp.sysroot.toLocal8Bit();
-    const QByteArray remoteArch = sp.remoteArchitecture.toLatin1();
-    const QByteArray gnuTarget = sp.gnuTarget.toLatin1();
-    const QByteArray searchPath = startParameters().searchPath.toLocal8Bit();
-    const QString args = sp.processArgs;
 
-    if (!remoteArch.isEmpty())
-        m_engine->postCommand("set architecture " + remoteArch);
-    if (!gnuTarget.isEmpty())
-        m_engine->postCommand("set gnutarget " + gnuTarget);
-    if (!sysroot.isEmpty())
-        m_engine->postCommand("set sysroot " + sysroot);
-    if (!searchPath.isEmpty())
-        m_engine->postCommand("set solib-search-path " + searchPath);
-    if (!args.isEmpty())
-        m_engine->postCommand("-exec-arguments " + args.toLocal8Bit());
+	if (sp.remoteArchitecture != _("android")) {
+		const QByteArray sysroot = sp.sysroot.toLocal8Bit();
+		const QByteArray remoteArch = sp.remoteArchitecture.toLatin1();
+		const QByteArray gnuTarget = sp.gnuTarget.toLatin1();
+		const QByteArray searchPath = startParameters().searchPath.toLocal8Bit();
+		const QString args = sp.processArgs;
+
+		if (!remoteArch.isEmpty())
+		    m_engine->postCommand("set architecture " + remoteArch);
+		if (!gnuTarget.isEmpty())
+		    m_engine->postCommand("set gnutarget " + gnuTarget);
+		if (!sysroot.isEmpty())
+		    m_engine->postCommand("set sysroot " + sysroot);
+		if (!searchPath.isEmpty())
+		    m_engine->postCommand("set solib-search-path " + searchPath);
+		if (!args.isEmpty())
+		    m_engine->postCommand("-exec-arguments " + args.toLocal8Bit());
+	}
+	else {
+		const QByteArray sysroot = sp.sysroot.toLocal8Bit();
+		const QByteArray solibPath = sp.sysroot.toLocal8Bit() + "/../lib";
+		m_engine->postCommand("set sysroot " + sysroot);
+		m_engine->postCommand("set solib-search-path " + solibPath);
+		m_engine->postCommand("handle SIGUSR2 noprint");
+		m_engine->postCommand("handle SIGSYS noprint");
+		m_engine->breakHandler()->breakByFunction(_("pal_assert"));
+	}
 
     // This has to be issued before 'target remote'. On pre-7.0 the
     // command is not present and will result in ' No symbol table is

@@ -1485,6 +1485,8 @@ bool BaseTextEditorWidget::cursorMoveKeyEvent(QKeyEvent *e)
 
     setTextCursor(cursor);
     ensureCursorVisible();
+    viewport()->update();
+
     return true;
 }
 

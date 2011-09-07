@@ -98,6 +98,8 @@ public:
     const char *skip_argument_variadics(const QVector<QByteArray> &actuals,
                                          Macro *macro,
                                          const char *first, const char *last);
+    void pushActuals(QVector<QByteArray> & actuals, Macro *__macro, const QByteArray& expanded);
+
 
 public: // attributes
     int lines;

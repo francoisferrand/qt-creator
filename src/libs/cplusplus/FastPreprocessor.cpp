@@ -44,7 +44,7 @@ FastPreprocessor::FastPreprocessor(const Snapshot &snapshot)
 
 QByteArray FastPreprocessor::run(QString fileName, const QString &source)
 {
-    _preproc.setExpandMacros(false);
+    _preproc.setExpandMacros(true);
 
     if (Document::Ptr doc = _snapshot.document(fileName)) {
         _merged.insert(fileName);

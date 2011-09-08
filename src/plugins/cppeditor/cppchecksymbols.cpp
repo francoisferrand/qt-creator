@@ -68,7 +68,7 @@ class CollectSymbols: protected SymbolVisitor
     Snapshot _snapshot;
     QSet<QByteArray> _types;
     QSet<QByteArray> _members;
-	QSet<QByteArray> _functions;
+    QSet<QByteArray> _functions;
     QSet<QByteArray> _virtualMethods;
     QSet<QByteArray> _statics;
     bool _mainDocument;
@@ -91,10 +91,10 @@ public:
         return _members;
     }
 
-	const QSet<QByteArray> &functions() const
-	{
-		return _functions;
-	}
+    const QSet<QByteArray> &functions() const
+    {
+        return _functions;
+    }
 
     const QSet<QByteArray> &virtualMethods() const
     {
@@ -155,16 +155,16 @@ protected:
         }
     }
 
-	void addFunction(const Name *name)
-	{
-		if (! name) {
-			return;
+    void addFunction(const Name *name)
+    {
+        if (! name) {
+            return;
 
-		} else if (name->isNameId()) {
-			const Identifier *id = name->identifier();
-			_functions.insert(QByteArray::fromRawData(id->chars(), id->size()));
-		}
-	}
+        } else if (name->isNameId()) {
+            const Identifier *id = name->identifier();
+            _functions.insert(QByteArray::fromRawData(id->chars(), id->size()));
+        }
+    }
 
     void addVirtualMethod(const Name *name)
     {
@@ -198,10 +198,10 @@ protected:
 
     virtual bool visit(Function *symbol)
     {
-		if (symbol->isVirtual())
+        if (symbol->isVirtual())
             addVirtualMethod(symbol->name());
-		else
-			addFunction(symbol->name());
+        else
+            addFunction(symbol->name());
 
         return true;
     }
@@ -220,13 +220,13 @@ protected:
     virtual bool visit(Declaration *symbol)
     {
         if (symbol->enclosingEnum() != 0)
-			addStatic(symbol->name());
+            addStatic(symbol->name());
 
         if (Function *funTy = symbol->type()->asFunctionType()) {
-			if (funTy->isVirtual())
+            if (funTy->isVirtual())
                 addVirtualMethod(symbol->name());
-			else
-				addFunction(symbol->name());
+            else
+                addFunction(symbol->name());
         }
 
         if (symbol->isTypedef())
@@ -328,7 +328,7 @@ CheckSymbols::CheckSymbols(Document::Ptr doc, const LookupContext &context, cons
     _fileName = doc->fileName();
     _potentialTypes = collectTypes.types();
     _potentialMembers = collectTypes.members();
-	_potentialFunctions = collectTypes.functions();
+    _potentialFunctions = collectTypes.functions();
     _potentialVirtualMethods = collectTypes.virtualMethods();
     _potentialStatics = collectTypes.statics();
 
@@ -355,7 +355,7 @@ void CheckSymbols::run()
 bool CheckSymbols::warning(unsigned line, unsigned column, const QString &text, unsigned length)
 {
     Document::DiagnosticMessage m(Document::DiagnosticMessage::Warning, _fileName, line, column, text, length);
-    _diagnosticMessages.append(m);
+    _doc->addDiagnosticMessage(m);
     return false;
 }
 
@@ -487,7 +487,7 @@ bool CheckSymbols::visit(UsingDirectiveAST *)
 
 bool CheckSymbols::visit(EnumeratorAST *ast)
 {
-	addUse(ast->identifier_token, SemanticInfo::EnumUse);
+    addUse(ast->identifier_token, SemanticInfo::EnumUse);
     return true;
 }
 
@@ -503,8 +503,8 @@ bool CheckSymbols::visit(SimpleDeclarationAST *ast)
                     } else if (maybeVirtualMethod(decl->name())) {
                         addVirtualMethod(_context.lookup(decl->name(), decl->enclosingScope()), declId, funTy->argumentCount());
                     } else {
-						addUse(declId, SemanticInfo::FunctionUse);
-					}
+                        addUse(declId, SemanticInfo::FunctionUse);
+                    }
                 }
             }
         }
@@ -561,7 +561,7 @@ bool CheckSymbols::visit(CallAST *ast)
 
         if (MemberAccessAST *access = ast->base_expression->asMemberAccess()) {
             if (access->member_name && access->member_name->name) {
-				if (maybeVirtualMethod(access->member_name->name) || maybeFunction(access->member_name->name)) {
+                if (maybeVirtualMethod(access->member_name->name) || maybeFunction(access->member_name->name)) {
                     const QByteArray expression = textOf(access);
 
                     const QList<LookupItem> candidates = typeOfExpression(expression, enclosingScope(),
@@ -572,11 +572,11 @@ bool CheckSymbols::visit(CallAST *ast)
                         memberName = q->unqualified_name;
 
                     addVirtualMethod(candidates, memberName, argumentCount);
-				}
+                }
             }
         } else if (IdExpressionAST *idExpr = ast->base_expression->asIdExpression()) {
             if (const Name *name = idExpr->name->name) {
-				if (maybeVirtualMethod(name) || maybeFunction(name)) {
+                if (maybeVirtualMethod(name) || maybeFunction(name)) {
                     NameAST *exprName = idExpr->name;
                     if (QualifiedNameAST *q = exprName->asQualifiedName())
                         exprName = q->unqualified_name;
@@ -676,8 +676,8 @@ void CheckSymbols::checkName(NameAST *ast, Scope *scope)
             Class *klass = scope->asClass();
             if (hasVirtualDestructor(_context.lookupType(klass)))
                 addUse(ast, SemanticInfo::VirtualMethodUse);
-			else
-				addUse(ast, SemanticInfo::FunctionUse);
+            else
+                addUse(ast, SemanticInfo::FunctionUse);
         } else if (maybeType(ast->name) || maybeStatic(ast->name)) {
             const QList<LookupItem> candidates = _context.lookup(ast->name, scope);
             addTypeOrStatic(candidates, ast);
@@ -757,8 +757,8 @@ bool CheckSymbols::visit(QualifiedNameAST *ast)
             if (ast->unqualified_name->asDestructorName() != 0) {
                 if (hasVirtualDestructor(binding))
                     addUse(ast->unqualified_name, SemanticInfo::VirtualMethodUse);
-				else
-					addUse(ast->unqualified_name, SemanticInfo::FunctionUse);
+                else
+                    addUse(ast->unqualified_name, SemanticInfo::FunctionUse);
             } else {
                 addTypeOrStatic(binding->find(ast->unqualified_name->name), ast->unqualified_name);
             }
@@ -822,9 +822,9 @@ bool CheckSymbols::visit(FunctionDefinitionAST *ast)
                 addUse(declId, SemanticInfo::VirtualMethodUse);
             } else if (maybeVirtualMethod(fun->name())) {
                 addVirtualMethod(_context.lookup(fun->name(), fun->enclosingScope()), declId, fun->argumentCount());
-			} else {
-				addUse(declId, SemanticInfo::FunctionUse);
-			}
+            } else {
+                addUse(declId, SemanticInfo::FunctionUse);
+            }
         }
     }
 
@@ -969,7 +969,7 @@ void CheckSymbols::addTypeOrStatic(const QList<LookupItem> &candidates, NameAST 
             UseKind kind = SemanticInfo::TypeUse;
 
             if (c->enclosingEnum() != 0)
-				kind = SemanticInfo::EnumUse;
+                kind = SemanticInfo::EnumUse;
 
             const Use use(line, column, length, kind);
             addUse(use);
@@ -1029,7 +1029,7 @@ void CheckSymbols::addStatic(const QList<LookupItem> &candidates, NameAST *ast)
             getTokenStartPosition(startToken, &line, &column);
             const unsigned length = tok.length();
 
-			const Use use(line, column, length, SemanticInfo::EnumUse);
+            const Use use(line, column, length, SemanticInfo::EnumUse);
             addUse(use);
             //qDebug() << "added use" << oo(ast->name) << line << column << length;
             break;
@@ -1047,6 +1047,8 @@ void CheckSymbols::addVirtualMethod(const QList<LookupItem> &candidates, NameAST
     if (tok.generated())
         return;
 
+    enum { Match_None, Match_TooManyArgs, Match_TooFewArgs, Match_Ok } matchType = Match_None;
+    SemanticInfo::UseKind kind = SemanticInfo::FunctionUse;
     foreach (const LookupItem &r, candidates) {
         Symbol *c = r.declaration();
         if (! c)
@@ -1054,21 +1056,36 @@ void CheckSymbols::addVirtualMethod(const QList<LookupItem> &candidates, NameAST
 
         Function *funTy = r.type()->asFunctionType();
         if (! funTy)
-            continue;
-		if (argumentCount < funTy->minimumArgumentCount())
-			continue;
-		else if (argumentCount > funTy->argumentCount()) {
-			if (! funTy->isVariadic())
-				continue;
-		}
+            continue;   //--> If this is not an object with a 'call' operator (a functor), display a warning (not a function OR no call operator)
+                        //    If this is an object with a 'call' operator (a functor), check the arguments count.
+                        //How to color functor calls??? as function or variable? or a dedicated color?
 
+        kind = funTy->isVirtual() ? SemanticInfo::VirtualMethodUse : SemanticInfo::FunctionUse;
+        if (argumentCount < funTy->minimumArgumentCount()) {
+            matchType = Match_TooFewArgs;
+        }
+        else if (argumentCount > funTy->argumentCount() && ! funTy->isVariadic()) {
+            matchType = Match_TooManyArgs;
+        }
+        else {
+            matchType = Match_Ok;
+            break;
+        }
+    }
+
+    if (matchType != Match_None) {
         unsigned line, column;
         getTokenStartPosition(startToken, &line, &column);
         const unsigned length = tok.length();
 
-		const Use use(line, column, length, funTy->isVirtual() ? SemanticInfo::VirtualMethodUse : SemanticInfo::FunctionUse);
+        //Add a diagnostic message if argument count does not match
+        if (matchType == Match_TooFewArgs)
+            warning(line, column, "Too few arguments", length);
+        else if (matchType == Match_TooManyArgs)
+            warning(line, column, "Too many arguments", length);
+
+        const Use use(line, column, length, kind);
         addUse(use);
-        break;
     }
 }
 
@@ -1139,15 +1156,15 @@ bool CheckSymbols::maybeVirtualMethod(const Name *name) const
 
 bool CheckSymbols::maybeFunction(const Name *name) const
 {
-	if (name) {
-		if (const Identifier *ident = name->identifier()) {
-			const QByteArray id = QByteArray::fromRawData(ident->chars(), ident->size());
-			if (_potentialFunctions.contains(id))
-				return true;
-		}
-	}
+    if (name) {
+        if (const Identifier *ident = name->identifier()) {
+            const QByteArray id = QByteArray::fromRawData(ident->chars(), ident->size());
+            if (_potentialFunctions.contains(id))
+                return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 void CheckSymbols::flush()

@@ -1005,6 +1005,11 @@ void CPPEditorWidget::finishHighlightSymbolUsages()
 
     TextEditor::SemanticHighlighter::clearExtraAdditionalFormatsUntilEnd(
                 highlighter, m_highlighter);
+
+    if (m_modelManager)
+        m_modelManager->setExtraDiagnostics(m_lastSemanticInfo.doc->fileName(),
+                                            CPlusPlus::CppModelManagerInterface::CppSemanticsDiagnostic,
+                                            m_lastSemanticInfo.doc->diagnosticMessages());
 }
 
 

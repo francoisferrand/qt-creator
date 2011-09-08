@@ -1032,6 +1032,8 @@ void CheckSymbols::addVirtualMethod(const QList<LookupItem> &candidates, NameAST
     if (tok.generated())
         return;
 
+    enum { Match_None, Match_TooManyArgs, Match_TooFewArgs, Match_Ok } matchType = Match_None;
+    Use::Kind kind = Use::Function;
     foreach (const LookupItem &r, candidates) {
         Symbol *c = r.declaration();
         if (! c)
@@ -1039,21 +1041,48 @@ void CheckSymbols::addVirtualMethod(const QList<LookupItem> &candidates, NameAST
 
         Function *funTy = r.type()->asFunctionType();
         if (! funTy)
-            continue;
-		if (argumentCount < funTy->minimumArgumentCount())
-			continue;
-		else if (argumentCount > funTy->argumentCount()) {
-			if (! funTy->isVariadic())
-				continue;
-		}
+            continue;   //--> If this is not an object with a 'call' operator (a functor), display a warning (not a function OR no call operator)
+                        //    If this is an object with a 'call' operator (a functor), check the arguments count.
+                        //How to color functor calls??? as function or variable? or a dedicated color?
 
+        kind = funTy->isVirtual() ? Use::VirtualMethod : Use::Function;
+        if (argumentCount < funTy->minimumArgumentCount()) {
+            matchType = Match_TooFewArgs;
+        }
+        else if (argumentCount > funTy->argumentCount() && ! funTy->isVariadic()) {
+            matchType = Match_TooManyArgs;
+        }
+        else {
+            matchType = Match_Ok;
+            break;
+        }
+    }
+
+    if (matchType != Match_None) {
         unsigned line, column;
         getTokenStartPosition(startToken, &line, &column);
         const unsigned length = tok.length();
 
-		const Use use(line, column, length, funTy->isVirtual() ? Use::VirtualMethod : Use::Function);
+        //Add a diagnostic message if argument count does not match
+        if (matchType == Match_TooFewArgs) {
+            Document::DiagnosticMessage d(Document::DiagnosticMessage::Warning,
+                                          _doc->fileName(),
+                                          line, column,
+                                          "Too few arguments",
+                                          length);
+            _doc->addDiagnosticMessage(d);
+        }
+        else if (matchType == Match_TooManyArgs) {
+            Document::DiagnosticMessage d(Document::DiagnosticMessage::Warning,
+                                          _doc->fileName(),
+                                          line, column,
+                                          "Too many arguments",
+                                          length);
+            _doc->addDiagnosticMessage(d);
+        }
+
+        const Use use(line, column, length, kind);
         addUse(use);
-        break;
     }
 }
 

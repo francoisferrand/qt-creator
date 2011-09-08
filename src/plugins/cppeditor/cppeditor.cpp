@@ -1117,6 +1117,14 @@ void CPPEditorWidget::finishHighlightSymbolUsages()
         b = b.next();
         ++m_nextHighlightBlockNumber;
     }
+
+    QTextCharFormat diagnosticMessageFormat;
+    diagnosticMessageFormat.setUnderlineColor(Qt::darkYellow); // ### hardcoded
+    diagnosticMessageFormat.setUnderlineStyle(QTextCharFormat::WaveUnderline); // ### hardcoded
+
+    setExtraSelections(UndefinedSymbolSelection, createSelections(document(),
+                                                                  m_lastSemanticInfo.doc->diagnosticMessages(),
+                                                                  diagnosticMessageFormat));
 }
 
 

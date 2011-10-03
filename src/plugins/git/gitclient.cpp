@@ -1495,6 +1495,13 @@ void GitClient::launchGitK(const QString &workingDirectory)
     tryLauchingGitK(env, workingDirectory, foundBinDir.path() + "/bin", false);
 }
 
+void GitClient::launchRepBrowser(const QString &workingDirectory)
+{
+    const QString repBrowserBinary = settings()->stringValue(GitSettings::repositoryBrowserCmd);
+    if (!repBrowserBinary.isEmpty())
+        QProcess::startDetached(repBrowserBinary, QStringList(workingDirectory), workingDirectory);
+}
+
 bool GitClient::tryLauchingGitK(const QProcessEnvironment &env,
                                 const QString &workingDirectory,
                                 const QString &gitBinDirectory,

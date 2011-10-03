@@ -36,6 +36,7 @@
 #include "gitclient.h"
 
 #include <vcsbase/vcsbaseconstants.h>
+#include <utils/pathchooser.h>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
@@ -66,6 +67,8 @@ SettingsPageWidget::SettingsPageWidget(QWidget *parent) :
 #else
     m_ui.winHomeCheckBox->setVisible(false);
 #endif
+    m_ui.repBrowserCommandPathChooser->setExpectedKind(Utils::PathChooser::ExistingCommand);
+    m_ui.repBrowserCommandPathChooser->setPromptDialogTitle(tr("Git Repository Browser Command"));
 }
 
 GitSettings SettingsPageWidget::settings() const
@@ -80,6 +83,7 @@ GitSettings SettingsPageWidget::settings() const
     rc.setValue(GitSettings::promptOnSubmitKey, m_ui.promptToSubmitCheckBox->isChecked());
     rc.setValue(GitSettings::winSetHomeEnvironmentKey, m_ui.winHomeCheckBox->isChecked());
     rc.setValue(GitSettings::gitkOptionsKey, m_ui.gitkOptionsLineEdit->text().trimmed());
+    rc.setValue(GitSettings::repositoryBrowserCmd, m_ui.repBrowserCommandPathChooser->path().trimmed());
     return rc;
 }
 
@@ -93,6 +97,7 @@ void SettingsPageWidget::setSettings(const GitSettings &s)
     m_ui.promptToSubmitCheckBox->setChecked(s.boolValue(GitSettings::promptOnSubmitKey));
     m_ui.winHomeCheckBox->setChecked(s.boolValue(GitSettings::winSetHomeEnvironmentKey));
     m_ui.gitkOptionsLineEdit->setText(s.stringValue(GitSettings::gitkOptionsKey));
+    m_ui.repBrowserCommandPathChooser->setPath(s.stringValue(GitSettings::repositoryBrowserCmd));
 }
 
 void SettingsPageWidget::setSystemPath()
@@ -115,6 +120,8 @@ QString SettingsPageWidget::searchKeywords() const
             << sep << m_ui.promptToSubmitCheckBox->text()
             << sep << m_ui.gitkGroupBox->title()
             << sep << m_ui.gitkOptionsLabel->text()
+            << sep << m_ui.repBrowserGroupBox->title()
+            << sep << m_ui.repBrowserCommandLabel->text()
                ;
     rc.remove(QLatin1Char('&'));
     return rc;

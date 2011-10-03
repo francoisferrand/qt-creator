@@ -212,7 +212,7 @@ private:
     QString                     m_commitMessageFileName;
     QString                     m_commitAmendSHA1;
     bool                        m_submitActionTriggered;
-
+    QAction *                   m_repBrowserAction;
 };
 
 } // namespace Git

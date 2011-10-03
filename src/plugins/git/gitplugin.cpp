@@ -429,6 +429,10 @@ bool GitPlugin::initialize(const QStringList &arguments, QString *errorMessage)
                            tr("Launch gitk"), QLatin1String("Git.LaunchGitK"),
                            globalcontext, true, &GitClient::launchGitK);
 
+    m_repBrowserAction = createRepositoryAction(actionManager, gitContainer,
+                           tr("Launch repository browser"), QLatin1String("Git.LaunchRepBrowser"),
+                           globalcontext, true, &GitClient::launchRepBrowser).first;
+
     createRepositoryAction(actionManager, gitContainer,
                            tr("Branches..."), QLatin1String("Git.BranchList"),
                            globalcontext, false, SLOT(branchList()));
@@ -1042,6 +1046,7 @@ void GitPlugin::updateActions(VCSBase::VCSBasePlugin::ActionState as)
 
     foreach (QAction *repositoryAction, m_repositoryActions)
         repositoryAction->setEnabled(repositoryEnabled);
+    m_repBrowserAction->setEnabled(repositoryEnabled && !settings().repositoryBrowser.isEmpty());
 
     // Prompts for repo.
     m_showAction->setEnabled(true);
@@ -1074,6 +1079,8 @@ GitSettings GitPlugin::settings() const
 void GitPlugin::setSettings(const GitSettings &s)
 {
     m_gitClient->setSettings(s);
+    m_repBrowserAction->setEnabled(currentState().hasTopLevel() &&
+                                   !s.repositoryBrowser.isEmpty());
 }
 
 GitClient *GitPlugin::gitClient() const

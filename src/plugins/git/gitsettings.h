@@ -68,6 +68,7 @@ struct GitSettings
     bool winSetHomeEnvironment;
     int showPrettyFormat;
     QString gitkOptions;
+    QString repositoryBrowser;
 };
 
 inline bool operator==(const GitSettings &p1, const GitSettings &p2)

@@ -192,6 +192,7 @@ private:
     QAction *m_undoAction;
     QAction *m_redoAction;
     QAction *m_menuAction;
+    QAction *m_repBrowserAction;
 
     QVector<Utils::ParameterAction *> m_fileActions;
     QVector<Utils::ParameterAction *> m_projectActions;

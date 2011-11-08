@@ -174,7 +174,7 @@ void dummyStatement(...) {}
 #endif
 
 #if USE_AUTOBREAK
-#   if Q_CC_MSVC
+#   ifdef Q_CC_MSVC
 #       define BREAK_HERE __asm { int 3 }; __asm { mov eax, eax }
 #   else
 #       define BREAK_HERE asm("int $3; mov %eax, %eax")
@@ -184,7 +184,7 @@ void dummyStatement(...) {}
 #endif
 
 #if USE_UNINITIALIZED_AUTOBREAK
-#   if Q_CC_MSVC
+#   ifdef Q_CC_MSVC
 #       define BREAK_UNINITIALIZED_HERE __asm { int 3 }; __asm { mov eax, eax }
 #   else
 #       define BREAK_UNINITIALIZED_HERE asm("int $3; mov %eax, %eax")
@@ -1979,8 +1979,12 @@ namespace formats {
         // Windows: Select UTF-16 in "Change Format for Type" in L&W context menu.
         // Other: Select UCS-6 in "Change Format for Type" in L&W context menu.
 
+        const unsigned char uu[] = {'a', 'ö', 'a' };
+        const unsigned char *u = uu;
+        BREAK_HERE;
+
         // Make sure to undo "Change Format".
-        dummyStatement(&s, &w, &t);
+        dummyStatement(&s, &w, &t, &u);
     }
 
     void testCharArrays()

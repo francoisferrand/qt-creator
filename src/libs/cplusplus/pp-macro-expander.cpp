@@ -161,7 +161,6 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                         __result->append(*it);
                         break;
 
-                    case NewLineInArgumentMarker:
                     case '\n':
                         __result->append('"');
                         __result->append('\n');
@@ -260,7 +259,7 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                     for (--end; end != begin - 1; --end) {
                         if (end-1 != begin-1 && *(end-1)==BeginArgumentMarker)
                             end--;
-                        else if (*end != EndArgumentMarker && *end != NewLineInArgumentMarker && !pp_isspace(*end))
+                        else if (*end != EndArgumentMarker && !pp_isspace(*end))
                             break;
                     }
                     ++end;
@@ -390,11 +389,14 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
             if (arg_it != arg_end || (arg_end!=__last && *arg_end == ','))
             {
                 actuals_ref.append(MacroArgumentReference(start_offset + (arg_it-start), arg_end - arg_it));
-                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it).trimmed()
-                                                                              .replace('\n',(char)(mark_arguments?NewLineInArgumentMarker:' '));
+                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it).simplified();
                 QByteArray expanded;
                 expand_actual (actual.constBegin (), actual.constEnd (), &expanded);
+                bool mark_arguments_prev = mark_arguments;
+                if (expanded.length() != actual.length())   //we should make a full comparison and/or detect if expander did find a macro
+                    mark_arguments  = false;
                 pushActuals(actuals, macro, expanded, &nb_arguments);
+                mark_arguments = mark_arguments_prev;
                 arg_it = arg_end;
             }
 
@@ -404,11 +406,14 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
 
                 arg_end = skip_argument(arg_it, __last);
                 actuals_ref.append(MacroArgumentReference(start_offset + (arg_it-start), arg_end - arg_it));
-                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it).trimmed()
-                                                                              .replace('\n',(char)(mark_arguments?NewLineInArgumentMarker:' '));
+                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it).simplified();
                 QByteArray expanded;
                 expand_actual (actual.constBegin (), actual.constEnd (), &expanded);
+                bool mark_arguments_prev = mark_arguments;
+                if (expanded.length() != actual.length())   //we should make a full comparison and/or detect if expander did find a macro
+                    mark_arguments  = false;
                 pushActuals(actuals, macro, expanded, &nb_arguments);
+                mark_arguments = mark_arguments_prev;
                 arg_it = arg_end;
             }
 
@@ -453,7 +458,8 @@ void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, c
 
         const char *arg_end = skip_argument_variadics(actuals, __macro, arg_it, __last);
         actuals.push_back(mark_arguments ?
-                              QByteArray(arg_it, arg_end - arg_it).trimmed().prepend(QByteArray().append(BeginArgumentMarker).append(1+*nb_arguments))
+                              QByteArray(arg_it, arg_end - arg_it).trimmed().prepend(QByteArray().append(BeginArgumentMarker)
+                                                                                                 .append(1+*nb_arguments))
                                                                             .append(EndArgumentMarker) :
                               QByteArray(arg_it, arg_end - arg_it).trimmed());
         arg_it = arg_end;

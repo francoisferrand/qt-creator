@@ -1039,9 +1039,6 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
         //replace markers
         const char * ptr = result.constData();
         const char * end = ptr + result.length();
-        MacroArgumentReference lastArg;
-        int extralines;
-
         QBitArray usedArgs(actuals.count());
 
         while(ptr < end) {
@@ -1050,10 +1047,10 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
             case MacroExpander::BeginArgumentMarker:
                 if (int argIdx = (*++ptr)) {
                     if (argIdx-1 < actuals.count()) {
-                        lastArg = actuals.at(argIdx-1);
+                        MacroArgumentReference lastArg = actuals.at(argIdx-1);
 
                         //Count line offset from the current token (_dot), at the end of the macro
-                        extralines = 0;
+                        int extralines = 0;
                         const char * beginOfArg = _source.constData()+lastArg.position();
                         for(const char * it = endOfText; it>beginOfArg; it--)
                             if (*it == '\n')
@@ -1061,19 +1058,20 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
 
                         //Paramter offset from beginning of macro
                         if (usedArgs.testBit(argIdx-1) == false) {
-                            markGeneratedTokens(false, lastArg.position(), extralines);
                             usedArgs.setBit(argIdx-1, true);
+
+                            markGeneratedTokens(false, lastArg.position(), extralines);
+                            out(QByteArray(_source.constData()+lastArg.position(), lastArg.length()));
+                            do {
+                                ptr++;
+                            } while(ptr < end && *ptr!=MacroExpander::EndArgumentMarker);
+                            markGeneratedTokens(true, lastArg.position() + lastArg.length(), extralines);
                         }
                     }
                 }
                 break;
 
             case MacroExpander::EndArgumentMarker:
-                markGeneratedTokens(true, lastArg.position() + lastArg.length(), extralines);
-                break;
-
-            case MacroExpander::NewLineInArgumentMarker:
-                out('\n');
                 break;
 
             default:

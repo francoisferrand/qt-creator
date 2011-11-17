@@ -87,7 +87,6 @@ public:
     enum {
         BeginArgumentMarker =   1,
         EndArgumentMarker =     2,
-        NewLineInArgumentMarker = 3
     };
     void setMarkArguments(bool mark)
     { mark_arguments = mark; }

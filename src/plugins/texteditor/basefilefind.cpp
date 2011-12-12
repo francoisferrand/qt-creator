@@ -125,8 +125,9 @@ void BaseFileFind::runNewSearch(const QString &txt, Find::FindFlags findFlags,
     search->setUserData(qVariantFromValue(parameters));
     connect(search, SIGNAL(activated(Find::SearchResultItem)), this, SLOT(openEditor(Find::SearchResultItem)));
     if (searchMode == SearchResultWindow::SearchAndReplace) {
-        connect(search, SIGNAL(replaceButtonClicked(QString,QList<Find::SearchResultItem>)),
-                this, SLOT(doReplace(QString,QList<Find::SearchResultItem>)));
+		connect(search, SIGNAL(replaceButtonClicked(QString,QList<Find::SearchResultItem>)),
+				this, (findFlags & Find::FindCaseSensitively) ? SLOT(doReplace(QString,QList<Find::SearchResultItem>))
+															  : SLOT(doSmartReplace(QString,QList<Find::SearchResultItem>)));
     }
     connect(search, SIGNAL(visibilityChanged(bool)), this, SLOT(hideHighlightAll(bool)));
     connect(search, SIGNAL(cancelled()), this, SLOT(cancel()));
@@ -178,12 +179,23 @@ void BaseFileFind::replaceAll(const QString &txt, Find::FindFlags findFlags)
 void BaseFileFind::doReplace(const QString &text,
                                const QList<Find::SearchResultItem> &items)
 {
-    QStringList files = replaceAll(text, items);
+	QStringList files = replaceAll(text, items, false);
     if (!files.isEmpty()) {
         Core::DocumentManager::notifyFilesChangedInternally(files);
         Find::SearchResultWindow::instance()->hide();
     }
 }
+
+void BaseFileFind::doSmartReplace(const QString &text,
+								  const QList<Find::SearchResultItem> &items)
+{
+	QStringList files = replaceAll(text, items, true);
+	if (!files.isEmpty()) {
+		Core::DocumentManager::notifyFilesChangedInternally(files);
+		Find::SearchResultWindow::instance()->hide();
+	}
+}
+
 
 void BaseFileFind::displayResult(int index) {
     QFutureWatcher<FileSearchResultList> *watcher =
@@ -324,7 +336,8 @@ void BaseFileFind::searchAgain()
 }
 
 QStringList BaseFileFind::replaceAll(const QString &text,
-                               const QList<Find::SearchResultItem> &items)
+									 const QList<Find::SearchResultItem> &items,
+									 bool matchCase)
 {
     if (items.isEmpty())
         return QStringList();
@@ -353,8 +366,10 @@ QStringList BaseFileFind::replaceAll(const QString &text,
             QString replacement;
             if (item.userData.canConvert<QStringList>() && !item.userData.toStringList().isEmpty())
                 replacement = Utils::expandRegExpReplacement(text, item.userData.toStringList());
-            else
-                replacement = text;
+			else if (matchCase)
+				replacement = Utils::matchCaseReplacement(text, item.text);
+			else
+				replacement = text;
 
             const int start = file->position(item.lineNumber, item.textMarkPos + 1);
             const int end = file->position(item.lineNumber,

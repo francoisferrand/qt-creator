@@ -121,6 +121,7 @@ QTCREATOR_UTILS_EXPORT QFuture<FileSearchResultList> findInFilesRegExp(const QSt
     QTextDocument::FindFlags flags, QMap<QString, QString> fileToContentsMap = QMap<QString, QString>());
 
 QTCREATOR_UTILS_EXPORT QString expandRegExpReplacement(const QString &replaceText, const QStringList &capturedTexts);
+QTCREATOR_UTILS_EXPORT QString matchCaseReplacement(const QString &replaceText, const QString &originalText);
 
 } // namespace Utils
 

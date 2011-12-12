@@ -347,6 +347,25 @@ QString Utils::expandRegExpReplacement(const QString &replaceText, const QString
     return result;
 }
 
+QString Utils::matchCaseReplacement(const QString &replaceText, const QString &originalText)
+{
+	for(int i=0; i<originalText.length(); i++)
+		if (originalText.at(i).isLower()) {
+			if (i > 1)
+				return replaceText;		//mixed case
+
+			for(int j=i; j<originalText.length(); j++)
+				if (originalText.at(j).isUpper())
+					return replaceText;	//mixed case
+
+			QString res = replaceText.toLower();
+			if (i == 1)
+				res.replace(0, 1, res.at(0).toUpper());
+			return res;
+		}
+	return replaceText.toUpper();
+}
+
 // #pragma mark -- FileIterator
 
 FileIterator::FileIterator()

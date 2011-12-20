@@ -1054,7 +1054,13 @@ void CheckSymbols::addVirtualMethod(const QList<LookupItem> &candidates, NameAST
         if (! c)
             continue;
 
-        Function *funTy = r.type()->asFunctionType();
+        Function *funTy = c->type()->asFunctionType();
+        if (! funTy) {
+            //Try to find a template function
+            if (Template * t = r.type()->asTemplateType())
+                if ((c = t->declaration()))
+                    funTy = c->type()->asFunctionType();
+        }
         if (! funTy)
             continue;   //--> If this is not an object with a 'call' operator (a functor), display a warning (not a function OR no call operator)
                         //    If this is an object with a 'call' operator (a functor), check the arguments count.

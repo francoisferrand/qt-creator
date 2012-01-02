@@ -1839,6 +1839,10 @@ void CPPEditorWidget::updateSemanticInfo(const SemanticInfo &semanticInfo)
                 foreach(Document::MacroUse macro, semanticInfo.doc->macroUses()) {
                     const QString name(macro.macro().name());
 
+                    //Filter out macro uses in condition
+                    if (macro.isInCondition())
+                        continue;
+
                     //Filter out QtKeywords
                     if (CppHighlighter::isQtKeyword(QStringRef(&name)))
                             continue;

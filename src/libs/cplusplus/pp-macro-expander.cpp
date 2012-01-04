@@ -367,10 +367,20 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
 
             // function like macro
             const char *arg_it = skip_whitespaces (__first, __last);
+            bool endArgument = false;
+            if (arg_it != __last && *arg_it == EndArgumentMarker)
+            {
+                const int lines = skip_whitespaces.lines;
+                arg_it = skip_whitespaces (arg_it+1, __last);
+                skip_whitespaces.lines += lines;
+                endArgument = true;
+            }
 
             if (arg_it == __last || *arg_it != '(')
             {
                 __result->append(name_begin, name_end - name_begin);
+                if (endArgument)
+                    __result->append(EndArgumentMarker);
                 lines += skip_whitespaces.lines;
                 __first = arg_it;
                 continue;
@@ -419,6 +429,9 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
 
             if (! (arg_it != __last && *arg_it == ')'))
                 return __last;
+
+            if (endArgument)
+                __result->append(EndArgumentMarker);
 
             ++arg_it; // skip ')'
             __first = arg_it;

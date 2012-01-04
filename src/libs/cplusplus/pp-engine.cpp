@@ -859,6 +859,8 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
                         }
 
                         // `m' is function-like macro.
+                        if (_dot->is(T_ERROR) && _dot->length() == 1 && *startOfToken(*_dot) == MacroExpander::EndArgumentMarker)
+                            _dot++;
                         if (_dot->is(T_LPAREN)) {
                             QVector<MacroArgumentReference> actuals;
                             collectActualArguments(&actuals);
@@ -1046,7 +1048,7 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
             {
             case MacroExpander::BeginArgumentMarker:
                 if (int argIdx = (*++ptr)) {
-                    if (argIdx-1 < actuals.count()) {
+                    if (ptr[1] != MacroExpander::EndArgumentMarker && argIdx-1 < actuals.count()) {
                         MacroArgumentReference lastArg = actuals.at(argIdx-1);
 
                         //Count line offset from the current token (_dot), at the end of the macro

@@ -1047,9 +1047,12 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
             switch(*ptr)
             {
             case MacroExpander::BeginArgumentMarker:
-                if (int argIdx = (*++ptr)) {
-                    if (ptr[1] != MacroExpander::EndArgumentMarker && argIdx-1 < actuals.count()) {
-                        MacroArgumentReference lastArg = actuals.at(argIdx-1);
+                if (ptr+MacroExpander::ArgumentWidth < end) {
+                    bool ok;
+                    int argIdx = QByteArray(++ptr, MacroExpander::ArgumentWidth).toInt(&ok, 16);
+                    ptr += MacroExpander::ArgumentWidth-1;
+                    if (ok && ptr[1] != MacroExpander::EndArgumentMarker && argIdx >= 0 && argIdx < actuals.count()) {
+                        MacroArgumentReference lastArg = actuals.at(argIdx);
 
                         //Count line offset from the current token (_dot), at the end of the macro
                         int extralines = 0;
@@ -1059,14 +1062,14 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
                                 extralines--;
 
                         //Paramter offset from beginning of macro
-                        if (usedArgs.testBit(argIdx-1) == false) {
-                            usedArgs.setBit(argIdx-1, true);
+                        if (usedArgs.testBit(argIdx) == false) {
+                            usedArgs.setBit(argIdx, true);
 
                             markGeneratedTokens(false, lastArg.position(), extralines);
                             out(QByteArray(_source.constData()+lastArg.position(), lastArg.length()));
                             do {
                                 ptr++;
-                            } while(ptr < end && *ptr!=MacroExpander::EndArgumentMarker);
+							} while(ptr < end && *ptr!=MacroExpander::EndArgumentMarker);
                             markGeneratedTokens(true, lastArg.position() + lastArg.length(), extralines);
                         }
                     }

@@ -149,7 +149,7 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 {
                     switch(*it) {
                     case BeginArgumentMarker:
-                        it++;   //skip argument index
+                        it+=ArgumentWidth;  //skip argument index
                         break;
 
                     case EndArgumentMarker:
@@ -257,8 +257,8 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 const char *end = begin + actual->size ();
                 if (paste) {
                     for (--end; end != begin - 1; --end) {
-                        if (end-1 != begin-1 && *(end-1)==BeginArgumentMarker)
-                            end--;
+                        if (end-ArgumentWidth >= begin-1 && *(end-ArgumentWidth)==BeginArgumentMarker)
+                            end-=ArgumentWidth;
                         else if (*end != EndArgumentMarker && !pp_isspace(*end))
                             break;
                     }
@@ -267,7 +267,7 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 if (paste || pastebefore) {
                     for(;begin < end;begin++) {
                         if (*begin == BeginArgumentMarker)
-                            begin++;
+                            begin+=ArgumentWidth;
                         else if (*begin!=EndArgumentMarker)
                             __result->append(*begin);
                     }
@@ -455,9 +455,9 @@ void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, c
         //already enough params --> append to the last one
         QByteArray& b = actuals.last();
         b.append(",");
-        if (mark_arguments) {
+        if (mark_arguments && *nb_arguments < (1<<(ArgumentWidth*8))) {
             b.append(BeginArgumentMarker);
-            b.append(1+*nb_arguments);
+            b.append(QString::number(*nb_arguments, 16).rightJustified(ArgumentWidth, QLatin1Char('0')).toLatin1());
             b.append(expanded.trimmed());
             b.append(EndArgumentMarker);
         }
@@ -470,9 +470,9 @@ void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, c
         const char * arg_it = __first;
 
         const char *arg_end = skip_argument_variadics(actuals, __macro, arg_it, __last);
-        actuals.push_back(mark_arguments ?
+        actuals.push_back(mark_arguments && *nb_arguments < (1<<(ArgumentWidth*8)) ?
                               QByteArray(arg_it, arg_end - arg_it).trimmed().prepend(QByteArray().append(BeginArgumentMarker)
-                                                                                                 .append(1+*nb_arguments))
+                                                                                                 .append(QString::number(*nb_arguments, 16).rightJustified(ArgumentWidth, QLatin1Char('0')).toLatin1()))
                                                                             .append(EndArgumentMarker) :
                               QByteArray(arg_it, arg_end - arg_it).trimmed());
         arg_it = arg_end;

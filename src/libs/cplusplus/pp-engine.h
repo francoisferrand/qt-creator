@@ -109,7 +109,7 @@ private:
         TokenIterator dot;
     };
 
-    bool markGeneratedTokens(bool markGeneratedTokens, TokenIterator dot = 0);
+    bool markGeneratedTokens(bool markGeneratedTokens, TokenIterator dot = 0, int extraLines=0);
     bool markGeneratedTokens(bool markGeneratedTokens, int position, int extraLines=0, bool newline=false);
 
     QByteArray expand(const QByteArray &source);

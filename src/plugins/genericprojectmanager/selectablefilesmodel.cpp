@@ -32,6 +32,8 @@
 
 #include "selectablefilesmodel.h"
 
+#include <coreplugin/icore.h>
+#include <coreplugin/mimedatabase.h>
 #include <coreplugin/fileiconprovider.h>
 
 #include <qtconcurrent/QtConcurrentTools>
@@ -136,6 +138,8 @@ bool SelectableFilesModel::filter(Tree *t)
 
 void SelectableFilesModel::buildTree(const QString &baseDir, Tree *tree, QFutureInterface<void> &fi)
 {
+    Core::MimeDatabase *mimeDatabase = Core::ICore::instance()->mimeDatabase();
+
     const QFileInfoList fileInfoList = QDir(baseDir).entryInfoList(QDir::Files |
                                                                    QDir::Dirs |
                                                                    QDir::NoDotAndDotDot |
@@ -159,7 +163,7 @@ void SelectableFilesModel::buildTree(const QString &baseDir, Tree *tree, QFuture
             allChecked &= t->checked == Qt::Checked;
             allUnchecked &= t->checked == Qt::Unchecked;
             tree->childDirectories.append(t);
-        } else if (m_suffixes.contains(fileInfo.suffix())) {
+        } else if (m_suffixes.isEmpty() ? mimeDatabase->findByFile(fileInfo) : m_suffixes.contains(fileInfo.suffix())) {
             Tree *t = new Tree;
             t->parent = tree;
             t->name = fileInfo.fileName();

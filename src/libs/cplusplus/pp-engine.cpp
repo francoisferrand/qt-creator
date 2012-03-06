@@ -851,12 +851,14 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
 
                 else {
                     if (Macro *m = env->resolve(spell)) {
+                        bool isGenerated = false;
                         if (! m->isFunctionLike()) {
                             if (0 == (m = processObjectLikeMacro(identifierToken, spell, m)))
                                 continue;
 
                             // the macro expansion generated something that looks like
                             // a function-like macro.
+                            isGenerated = true;
                         }
 
                         // `m' is function-like macro.
@@ -867,7 +869,12 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
                             collectActualArguments(&actuals);
 
                             if (_dot->is(T_RPAREN)) {
+                                Client * client_ = client;
+                                if (isGenerated)
+                                    client = NULL;
                                 expandFunctionLikeMacro(identifierToken, m, actuals);
+                                if (isGenerated)
+                                    client = client_;
                                 continue;
                             }
                         }

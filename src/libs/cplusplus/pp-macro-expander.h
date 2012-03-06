@@ -82,6 +82,7 @@ class MacroExpander
     bool mark_arguments;
 
     const QByteArray *resolve_formal(const QByteArray &name);
+    static inline QByteArray argumentMarker(int number);
 
 public:
     enum {

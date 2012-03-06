@@ -387,7 +387,6 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
             }
 
             QVector<QByteArray> actuals;
-            QVector<MacroArgumentReference> actuals_ref;
             actuals.reserve (5);
             ++arg_it; // skip '('
 
@@ -398,7 +397,6 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
             const char *arg_end = skip_argument(arg_it, __last);
             if (arg_it != arg_end || (arg_end!=__last && *arg_end == ','))
             {
-                actuals_ref.append(MacroArgumentReference(start_offset + (arg_it-start), arg_end - arg_it));
                 const QByteArray actual = QByteArray(arg_it, arg_end - arg_it).simplified();
                 QByteArray expanded;
                 expand_actual (actual.constBegin (), actual.constEnd (), &expanded);
@@ -415,7 +413,6 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 ++arg_it; // skip ','
 
                 arg_end = skip_argument(arg_it, __last);
-                actuals_ref.append(MacroArgumentReference(start_offset + (arg_it-start), arg_end - arg_it));
                 const QByteArray actual = QByteArray(arg_it, arg_end - arg_it).simplified();
                 QByteArray expanded;
                 expand_actual (actual.constBegin (), actual.constEnd (), &expanded);
@@ -449,6 +446,19 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
     return __first;
 }
 
+
+QByteArray MacroExpander::argumentMarker(int number)
+{
+    QByteArray buf(ArgumentWidth, '0');
+    char * ptr = buf.data()+buf.size()-1;
+    for(int i=ArgumentWidth-1; i>=0 && number; i--) {
+        const int val = number % 16;
+        number /= 16;
+        *ptr-- = val < 10 ? '0' + val : 'A' + val - 10;
+    }
+    return buf;
+}
+
 void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, const QByteArray& expanded, int * nb_arguments)
 {
     if (__macro->isVariadic() && actuals.count() == __macro->formals().count()) {
@@ -457,7 +467,7 @@ void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, c
         b.append(",");
         if (mark_arguments && *nb_arguments < (1<<(ArgumentWidth*8))) {
             b.append(BeginArgumentMarker);
-            b.append(QString::number(*nb_arguments, 16).rightJustified(ArgumentWidth, QLatin1Char('0')).toLatin1());
+            b.append(argumentMarker(*nb_arguments));
             b.append(expanded.trimmed());
             b.append(EndArgumentMarker);
         }
@@ -472,7 +482,7 @@ void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, c
         const char *arg_end = skip_argument_variadics(actuals, __macro, arg_it, __last);
         actuals.push_back(mark_arguments && *nb_arguments < (1<<(ArgumentWidth*8)) ?
                               QByteArray(arg_it, arg_end - arg_it).trimmed().prepend(QByteArray().append(BeginArgumentMarker)
-                                                                                                 .append(QString::number(*nb_arguments, 16).rightJustified(ArgumentWidth, QLatin1Char('0')).toLatin1()))
+                                                                                                 .append(argumentMarker(*nb_arguments)))
                                                                             .append(EndArgumentMarker) :
                               QByteArray(arg_it, arg_end - arg_it).trimmed());
         arg_it = arg_end;

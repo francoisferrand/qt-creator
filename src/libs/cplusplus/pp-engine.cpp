@@ -463,8 +463,7 @@ Preprocessor::Preprocessor(Client *client, Environment *env)
       _result(0),
       _markGeneratedTokens(false),
       _expandMacros(true),
-      _keepComments(false),
-      _macroExpansionLevel(0)
+      _keepComments(false)
 {
     resetIfLevel ();
 }
@@ -774,8 +773,7 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
         if (_dot->f.joined)
             out("\\");
 
-        if (_macroExpansionLevel == 0)
-            processNewline();
+        processNewline();
 
         if (_dot->is(T_EOF_SYMBOL)) {
             break;
@@ -862,8 +860,6 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
                         }
 
                         // `m' is function-like macro.
-                        if (_dot->is(T_ERROR) && _dot->length() == 1 && *startOfToken(*_dot) == MacroExpander::EndArgumentMarker)
-                            _dot++;
                         if (_dot->is(T_LPAREN)) {
                             QVector<MacroArgumentReference> actuals;
                             collectActualArguments(&actuals);
@@ -977,20 +973,18 @@ Macro *Preprocessor::processObjectLikeMacro(TokenIterator identifierToken,
             return m;
     }
 
-    const bool was = (_macroExpansionLevel == 0 ? markGeneratedTokens(true, identifierToken) : false);
+    const bool was = markGeneratedTokens(true, identifierToken);
     out(tmp);
-    if (_macroExpansionLevel == 0)
-        (void) markGeneratedTokens(was);
+    (void) markGeneratedTokens(was);
     return 0;
 }
 
 void Preprocessor::expandBuiltinMacro(TokenIterator identifierToken,
                                       const QByteArray &spell)
 {
-    const bool was = (_macroExpansionLevel == 0 ? markGeneratedTokens(true, identifierToken) : false);
+    const bool was = markGeneratedTokens(true, identifierToken);
     expand(spell, _result);
-    if (_macroExpansionLevel == 0)
-        (void) markGeneratedTokens(was);
+    (void) markGeneratedTokens(was);
 }
 
 void Preprocessor::expandObjectLikeMacro(TokenIterator identifierToken,
@@ -1027,93 +1021,69 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
                                     *m, text, false, actuals);
     }
 
-    if (_macroExpansionLevel == 0) {
-        QByteArray rawresult;
-        rawresult.reserve(256);
-        _expand.setMarkArguments(true);
-        expand(beginOfText, endOfText, &rawresult);
-        _expand.setMarkArguments(false);
+    QByteArray result;
+    result.reserve(256);
+    _expand.setMarkArguments(true);
+    expand(beginOfText, endOfText, &result);     //expand arguments first, with client --> let the app know of these!
+    _expand.setMarkArguments(false);
 
-        Client * previousclient = client;
-        client = NULL;  //prevent notifications to client
-        _macroExpansionLevel++;
+    //replace markers
+    const char * ptr = result.constData();
+    const char * end = ptr + result.length();
+    QBitArray usedArgs(actuals.count());
 
-        QByteArray result;
-        result.reserve(rawresult.size());
-        preprocess(env->currentFile, rawresult, &result);
+    //Count line offset from the macro to the beginning of 'current' token (_dot)
+    int extralines = 0;
+    const char * beginOfMacro = beginOfText;
+    for(const char * it = startOfToken(*_dot); it > beginOfMacro; it--)
+        if (*it == '\n')
+            extralines--;
+    const bool was = markGeneratedTokens(true, identifierToken, extralines);
+    while(ptr < end) {
+        switch(*ptr)
+        {
+        case MacroExpander::BeginArgumentMarker:
+            if (ptr+MacroExpander::ArgumentWidth < end) {
+                bool ok;
+                int argIdx = QByteArray(++ptr, MacroExpander::ArgumentWidth).toInt(&ok, 16);
+                ptr += MacroExpander::ArgumentWidth-1;
+                if (ok && ptr[1] != MacroExpander::EndArgumentMarker && argIdx >= 0 && argIdx < actuals.count()) {
+                    MacroArgumentReference lastArg = actuals.at(argIdx);
 
-        _macroExpansionLevel--;
-        client = previousclient;
+                    //Paramter offset from beginning of macro
+                    if (usedArgs.testBit(argIdx) == false) {
+                        usedArgs.setBit(argIdx, true);
 
-        //replace markers
-        const char * ptr = result.constData();
-        const char * end = ptr + result.length();
-        QBitArray usedArgs(actuals.count());
+                        //Count line offset from the argument to the beginning of 'current' token (_dot)
+                        int extralines = 0;
+                        const char * beginOfArg = _source.constData()+lastArg.position();
+                        for(const char * it = startOfToken(*_dot); it > beginOfArg; it--)
+                            if (*it == '\n')
+                                extralines--;
 
-        //Count line offset from the macro to the beginning of 'current' token (_dot)
-        int extralines = 0;
-        const char * beginOfMacro = beginOfText;
-        for(const char * it = startOfToken(*_dot); it > beginOfMacro; it--)
-            if (*it == '\n')
-                extralines--;
-        const bool was = markGeneratedTokens(true, identifierToken, extralines);
-        while(ptr < end) {
-            switch(*ptr)
-            {
-            case MacroExpander::BeginArgumentMarker:
-                if (ptr+MacroExpander::ArgumentWidth < end) {
-                    bool ok;
-                    int argIdx = QByteArray(++ptr, MacroExpander::ArgumentWidth).toInt(&ok, 16);
-                    ptr += MacroExpander::ArgumentWidth-1;
-                    if (ok && ptr[1] != MacroExpander::EndArgumentMarker && argIdx >= 0 && argIdx < actuals.count()) {
-                        MacroArgumentReference lastArg = actuals.at(argIdx);
-
-                        //Paramter offset from beginning of macro
-                        if (usedArgs.testBit(argIdx) == false) {
-                            usedArgs.setBit(argIdx, true);
-
-                            //Count line offset from the argument to the beginning of 'current' token (_dot)
-                            int extralines = 0;
-                            const char * beginOfArg = _source.constData()+lastArg.position();
-                            for(const char * it = startOfToken(*_dot); it > beginOfArg; it--)
-                                if (*it == '\n')
-                                    extralines--;
-
-                            (void)markGeneratedTokens(was, lastArg.position(), extralines);
-                            out(QByteArray(_source.constData()+lastArg.position(), lastArg.length()));
-                            do {
-                                ptr++;
-							} while(ptr < end && *ptr!=MacroExpander::EndArgumentMarker);
-                            (void)markGeneratedTokens(true, lastArg.position() + lastArg.length(), extralines);
-                        }
+                        (void)markGeneratedTokens(was, lastArg.position(), extralines);
+                        out(QByteArray(_source.constData()+lastArg.position(), lastArg.length()));
+                        do {
+                            ptr++;
+                        } while(ptr < end && *ptr!=MacroExpander::EndArgumentMarker);
+                        (void)markGeneratedTokens(true, lastArg.position() + lastArg.length(), extralines);
                     }
                 }
-                break;
-
-            case MacroExpander::EndArgumentMarker:
-                break;
-
-            default:
-                out(*ptr);
-                break;
             }
-            ptr++;
+            break;
+
+        case MacroExpander::EndArgumentMarker:
+            break;
+
+        default:
+            out(*ptr);
+            break;
         }
+        ptr++;
+    }
 
-        (void) markGeneratedTokens(was);
-    }
-    else if (_macroExpansionLevel < 3) {
-        QByteArray rawresult;
-        rawresult.reserve(256);
-        expand(beginOfText, endOfText, &rawresult);
+    (void) markGeneratedTokens(was);
 
-        _macroExpansionLevel++;
-        preprocess(env->currentFile, rawresult, _result);
-        _macroExpansionLevel--;
-    }
-    else {
-        expand(beginOfText, endOfText, _result);
-    }
 
     if (client)
         client->stopExpandingMacro(_dot->offset, *m);

@@ -205,8 +205,6 @@ private:
     QString _originalSource;
     bool _expandMacros;
     bool _keepComments;
-
-    int _macroExpansionLevel;
 };
 
 } // namespace CPlusPlus

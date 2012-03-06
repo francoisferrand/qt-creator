@@ -121,7 +121,8 @@ private:
                                const QByteArray &spell,
                                Macro *m, QByteArray *result);
     void expandFunctionLikeMacro(TokenIterator identifierToken, Macro *m,
-                                 const QVector<MacroArgumentReference> &actuals);
+                                 const QVector<MacroArgumentReference> &actuals,
+                                 bool isGeneratedMacro);
 
     void resetIfLevel();
     bool testIfLevel();

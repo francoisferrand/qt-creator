@@ -842,18 +842,19 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
                     out(spell);
                     continue;
                 }
-
-                else if (env->isBuiltinMacro(spell))
+                else if (env->isBuiltinMacro(spell)) {
                     expandBuiltinMacro(identifierToken, spell);
-
+                }
                 else {
                     if (Macro *m = env->resolve(spell)) {
+                        bool isGenerated = false;
                         if (! m->isFunctionLike()) {
                             if (0 == (m = processObjectLikeMacro(identifierToken, spell, m)))
                                 continue;
 
                             // the macro expansion generated something that looks like
                             // a function-like macro.
+                            isGenerated = true;
                         }
 
                         // `m' is function-like macro.
@@ -862,7 +863,7 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
                             collectActualArguments(&actuals);
 
                             if (_dot->is(T_RPAREN)) {
-                                expandFunctionLikeMacro(identifierToken, m, actuals);
+                                expandFunctionLikeMacro(identifierToken, m, actuals, isGenerated);
                                 continue;
                             }
                         }
@@ -998,19 +999,50 @@ void Preprocessor::expandObjectLikeMacro(TokenIterator identifierToken,
 
 void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
                                            Macro *m,
-                                           const QVector<MacroArgumentReference> &actuals_)
+                                           const QVector<MacroArgumentReference> &actuals_,
+                                           bool isGeneratedMacro)
 {
     const char *beginOfText = startOfToken(*identifierToken);
     const char *endOfText = endOfToken(*_dot);
     ++_dot; // skip T_RPAREN
 
     if (client) {
-        const QByteArray text =
-                QByteArray::fromRawData(beginOfText,
-                                        endOfText - beginOfText);
+        const QByteArray text = QByteArray::fromRawData(beginOfText,
+                                                        endOfText - beginOfText);
 
-        client->startExpandingMacro(identifierToken->offset,
-									*m, text, false, actuals_);
+        if (!isGeneratedMacro)
+            client->startExpandingMacro(identifierToken->offset,
+                                        *m, text, false, actuals_);
+
+        //Notify expansion of macros used in arguments
+        for(TokenIterator i = identifierToken+2 /*skip opening parenthesis*/; i<_dot-1 /*skip closing parenthesis*/; i++)
+            if (i->is(T_IDENTIFIER)) {
+                const QByteArray spell = tokenSpell(*i);
+                if (env->isBuiltinMacro(spell))
+                    continue;
+                else if (Macro *m = env->resolve(spell)) {
+                    if (!m->isFunctionLike()) {
+                        client->startExpandingMacro(i->offset, *m, spell, false);
+                        client->stopExpandingMacro(i->offset, *m);
+                    }
+                    else if (i+1<_dot-1 && i[1].is(T_LPAREN)) {
+                        TokenIterator prevdot = _dot;
+                        _dot = i+1;
+
+                        QVector<MacroArgumentReference> actuals;
+                        collectActualArguments(&actuals);
+                        const char *beginOfText = startOfToken(*i);
+                        const char *endOfText = endOfToken(*_dot);
+                        const QByteArray text = QByteArray::fromRawData(beginOfText,
+                                                                        endOfText - beginOfText);
+                        client->startExpandingMacro(i->offset, *m, text, false, actuals);
+                        client->stopExpandingMacro(i->offset, *m);
+
+                        _dot = prevdot;
+                        i++;    //increase i (skip openinng parenthesis immediatly)
+                    }
+                }
+            }
     }
 
     //Count line offset from the macro to the beginning of 'current' token (_dot)
@@ -1080,7 +1112,7 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
     }
     (void) markGeneratedTokens(was);
 
-    if (client)
+    if (client && !isGeneratedMacro)
         client->stopExpandingMacro(_dot->offset, *m);
 }
 

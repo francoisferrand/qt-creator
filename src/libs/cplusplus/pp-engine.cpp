@@ -1006,7 +1006,7 @@ void Preprocessor::expandObjectLikeMacro(TokenIterator identifierToken,
 
 void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
                                            Macro *m,
-                                           const QVector<MacroArgumentReference> &actuals)
+                                           const QVector<MacroArgumentReference> &actuals_)
 {
     const char *beginOfText = startOfToken(*identifierToken);
     const char *endOfText = endOfToken(*_dot);
@@ -1017,7 +1017,7 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
                                                         endOfText - beginOfText);
 
         client->startExpandingMacro(identifierToken->offset,
-                                    *m, text, false, actuals);
+                                    *m, text, false, actuals_);
 
         //Notify expansion of macros used in arguments
         for(TokenIterator i = identifierToken+2 /*skip opening parenthesis*/; i<_dot-1 /*skip closing parenthesis*/; i++)
@@ -1050,11 +1050,28 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
             }
     }
 
+    //Generate parameter, marking each identifier
+    QVector<MacroArgumentReference> actuals;
+    actuals.reserve(5);
+    QByteArray params;
+    params.reserve(endOfText-beginOfText + (MacroExpander::ArgumentWidth+2)*actuals.capacity());
+    params.append(beginOfText, startOfToken(identifierToken[2])-beginOfText);
+    for(TokenIterator i = identifierToken+2; i<_dot; i++) {
+        const QByteArray spell = tokenSpell(*i);
+        if (i->is(T_IDENTIFIER) && !env->isBuiltinMacro(spell) && env->resolve(spell)==NULL && actuals.count()<(1<<MacroExpander::ArgumentWidth*4)) {
+            params.append(MacroExpander::BeginArgumentMarker);
+            params.append(MacroExpander::argumentMarker(actuals.count()));
+            params.append(spell);
+            params.append(MacroExpander::EndArgumentMarker);
+            actuals.append(MacroArgumentReference(i->begin(), i->length()));
+        }
+        else
+            params.append(spell);
+    }
+
     QByteArray result;
     result.reserve(256);
-    _expand.setMarkArguments(true);
-    expand(beginOfText, endOfText, &result);
-    _expand.setMarkArguments(false);
+    expand(params, &result);
 
     //replace markers
     const char * ptr = result.constData();

@@ -75,7 +75,6 @@ MacroExpander::MacroExpander(Environment *env, pp_frame *frame, Client *client, 
       frame(frame),
       client(client),
       start_offset(start_offset),
-      mark_arguments(false),
       lines(0)
 { }
 
@@ -392,19 +391,13 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
 
             MacroExpander expand_actual (env, frame);
 
-            int nb_arguments = 0;
-
             const char *arg_end = skip_argument(arg_it, __last);
             if (arg_it != arg_end || (arg_end!=__last && *arg_end == ','))
             {
-                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it).simplified();
+                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it);
                 QByteArray expanded;
                 expand_actual (actual.constBegin (), actual.constEnd (), &expanded);
-                bool mark_arguments_prev = mark_arguments;
-                if (expanded.length() != actual.length())   //we should make a full comparison and/or detect if expander did find a macro
-                    mark_arguments  = false;
-                pushActuals(actuals, macro, expanded, &nb_arguments);
-                mark_arguments = mark_arguments_prev;
+                pushActuals(actuals, macro, expanded);
                 arg_it = arg_end;
             }
 
@@ -413,14 +406,10 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                 ++arg_it; // skip ','
 
                 arg_end = skip_argument(arg_it, __last);
-                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it).simplified();
+                const QByteArray actual = QByteArray(arg_it, arg_end - arg_it);
                 QByteArray expanded;
                 expand_actual (actual.constBegin (), actual.constEnd (), &expanded);
-                bool mark_arguments_prev = mark_arguments;
-                if (expanded.length() != actual.length())   //we should make a full comparison and/or detect if expander did find a macro
-                    mark_arguments  = false;
-                pushActuals(actuals, macro, expanded, &nb_arguments);
-                mark_arguments = mark_arguments_prev;
+                pushActuals(actuals, macro, expanded);
                 arg_it = arg_end;
             }
 
@@ -459,20 +448,13 @@ QByteArray MacroExpander::argumentMarker(int number)
     return buf;
 }
 
-void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, const QByteArray& expanded, int * nb_arguments)
+void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, const QByteArray& expanded)
 {
     if (__macro->isVariadic() && actuals.count() == __macro->formals().count()) {
         //already enough params --> append to the last one
         QByteArray& b = actuals.last();
         b.append(",");
-        if (mark_arguments && *nb_arguments < (1<<(ArgumentWidth*8))) {
-            b.append(BeginArgumentMarker);
-            b.append(argumentMarker(*nb_arguments));
-            b.append(expanded.trimmed());
-            b.append(EndArgumentMarker);
-        }
-        else
-            b.append(expanded.trimmed());
+        b.append(expanded.trimmed());
     }
     else {
         const char * __first = expanded.constData();
@@ -480,11 +462,7 @@ void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, c
         const char * arg_it = __first;
 
         const char *arg_end = skip_argument_variadics(actuals, __macro, arg_it, __last);
-        actuals.push_back(mark_arguments && *nb_arguments < (1<<(ArgumentWidth*8)) ?
-                              QByteArray(arg_it, arg_end - arg_it).trimmed().prepend(QByteArray().append(BeginArgumentMarker)
-                                                                                                 .append(argumentMarker(*nb_arguments)))
-                                                                            .append(EndArgumentMarker) :
-                              QByteArray(arg_it, arg_end - arg_it).trimmed());
+        actuals.push_back(QByteArray(arg_it, arg_end - arg_it).trimmed());
         arg_it = arg_end;
 
         while(arg_it != __last) {
@@ -494,7 +472,6 @@ void MacroExpander::pushActuals(QVector<QByteArray> & actuals, Macro *__macro, c
             arg_it = arg_end;
         }
     }
-    (*nb_arguments)++;
 }
 
 const char *MacroExpander::skip_argument_variadics (QVector<QByteArray> const &__actuals,

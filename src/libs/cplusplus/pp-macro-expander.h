@@ -79,20 +79,17 @@ class MacroExpander
     pp_skip_comment_or_divop skip_comment_or_divop;
     pp_skip_blanks skip_blanks;
     pp_skip_whitespaces skip_whitespaces;
-    bool mark_arguments;
 
     const QByteArray *resolve_formal(const QByteArray &name);
-    static inline QByteArray argumentMarker(int number);
 
 public:
+    static QByteArray argumentMarker(int number);
     enum {
         BeginArgumentMarker =   1,
         EndArgumentMarker =     2,
 
         ArgumentWidth =         2
     };
-    void setMarkArguments(bool mark)
-    { mark_arguments = mark; }
 
     explicit MacroExpander(Environment *env, pp_frame *frame = 0, Client *client = 0, unsigned start_offset = 0);
 
@@ -109,7 +106,7 @@ public:
     const char *skip_argument_variadics(const QVector<QByteArray> &actuals,
                                          Macro *macro,
                                          const char *first, const char *last);
-    void pushActuals(QVector<QByteArray> & actuals, Macro *__macro, const QByteArray& expanded, int * nb_arguments);
+    void pushActuals(QVector<QByteArray> & actuals, Macro *__macro, const QByteArray& expanded);
 
 
 public: // attributes

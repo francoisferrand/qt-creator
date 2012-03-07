@@ -1013,18 +1013,47 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
     ++_dot; // skip T_RPAREN
 
     if (client) {
-        const QByteArray text =
-                QByteArray::fromRawData(beginOfText,
-                                        endOfText - beginOfText);
+        const QByteArray text = QByteArray::fromRawData(beginOfText,
+                                                        endOfText - beginOfText);
 
         client->startExpandingMacro(identifierToken->offset,
                                     *m, text, false, actuals);
+
+        //Notify expansion of macros used in arguments
+        for(TokenIterator i = identifierToken+2 /*skip opening parenthesis*/; i<_dot-1 /*skip closing parenthesis*/; i++)
+            if (i->is(T_IDENTIFIER)) {
+                const QByteArray spell = tokenSpell(*i);
+                if (env->isBuiltinMacro(spell))
+                    continue;
+                else if (Macro *m = env->resolve(spell)) {
+                    if (!m->isFunctionLike()) {
+                        client->startExpandingMacro(i->offset, *m, spell, false);
+                        client->stopExpandingMacro(i->offset, *m);
+                    }
+                    else if (i+1<_dot-1 && i[1].is(T_LPAREN)) {
+                        TokenIterator prevdot = _dot;
+                        _dot = i+1;
+
+                        QVector<MacroArgumentReference> actuals;
+                        collectActualArguments(&actuals);
+                        const char *beginOfText = startOfToken(*i);
+                        const char *endOfText = endOfToken(*_dot);
+                        const QByteArray text = QByteArray::fromRawData(beginOfText,
+                                                                        endOfText - beginOfText);
+                        client->startExpandingMacro(i->offset, *m, text, false, actuals);
+                        client->stopExpandingMacro(i->offset, *m);
+
+                        _dot = prevdot;
+                        i++;    //increase i (skip openinng parenthesis immediatly)
+                    }
+                }
+            }
     }
 
     QByteArray result;
     result.reserve(256);
     _expand.setMarkArguments(true);
-    expand(beginOfText, endOfText, &result);     //expand arguments first, with client --> let the app know of these!
+    expand(beginOfText, endOfText, &result);
     _expand.setMarkArguments(false);
 
     //replace markers

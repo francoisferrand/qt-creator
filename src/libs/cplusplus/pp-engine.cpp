@@ -1050,86 +1050,72 @@ void Preprocessor::expandFunctionLikeMacro(TokenIterator identifierToken,
             }
     }
 
-    //Generate parameter, marking each identifier
-    QVector<MacroArgumentReference> actuals;
-    actuals.reserve(5);
-    QByteArray params;
-    params.reserve(endOfText-beginOfText + (MacroExpander::ArgumentWidth+2)*actuals.capacity());
-    params.append(beginOfText, startOfToken(identifierToken[2])-beginOfText);
-    for(TokenIterator i = identifierToken+2; i<_dot; i++) {
-        const QByteArray spell = tokenSpell(*i);
-        if (i->is(T_IDENTIFIER) && !env->isBuiltinMacro(spell) && env->resolve(spell)==NULL && actuals.count()<(1<<MacroExpander::ArgumentWidth*4)) {
-            params.append(MacroExpander::BeginArgumentMarker);
-            params.append(MacroExpander::argumentMarker(actuals.count()));
-            params.append(spell);
-            params.append(MacroExpander::EndArgumentMarker);
-            actuals.append(MacroArgumentReference(i->begin(), i->length()));
-        }
-        else
-            params.append(spell);
-    }
-
-    QByteArray result;
-    result.reserve(256);
-    expand(params, &result);
-
-    //replace markers
-    const char * ptr = result.constData();
-    const char * end = ptr + result.length();
-    QBitArray usedArgs(actuals.count());
-
     //Count line offset from the macro to the beginning of 'current' token (_dot)
-    int extralines = 0;
-    const char * beginOfMacro = beginOfText;
-    for(const char * it = startOfToken(*_dot); it > beginOfMacro; it--)
-        if (*it == '\n')
-            extralines--;
-    const bool was = markGeneratedTokens(true, identifierToken, extralines);
-    while(ptr < end) {
-        switch(*ptr)
-        {
-        case MacroExpander::BeginArgumentMarker:
-            if (ptr+MacroExpander::ArgumentWidth < end) {
-                bool ok;
-                int argIdx = QByteArray(++ptr, MacroExpander::ArgumentWidth).toInt(&ok, 16);
-                ptr += MacroExpander::ArgumentWidth-1;
-                if (ok && ptr[1] != MacroExpander::EndArgumentMarker && argIdx >= 0 && argIdx < actuals.count()) {
-                    MacroArgumentReference lastArg = actuals.at(argIdx);
+    const bool was = markGeneratedTokens(true, identifierToken, identifierToken->lineno - _dot->lineno);
+    if (!was) {
+        //Generate parameter, marking each identifier
+        QVector<TokenIterator> identifiers;
+        identifiers.reserve(5);
+        QByteArray params;
+        params.reserve(endOfText-beginOfText + (MacroExpander::ArgumentWidth+2)*identifiers.capacity());
+        params.append(beginOfText, startOfToken(identifierToken[2])-beginOfText);
+        for(TokenIterator i = identifierToken+2; i<_dot; i++) {
+            const QByteArray spell = tokenSpell(*i);
+            if (i->is(T_IDENTIFIER) && identifiers.count()<(1<<MacroExpander::ArgumentWidth*4) && !env->isBuiltinMacro(spell) && !env->resolve(spell)) {
+                params.append(MacroExpander::BeginArgumentMarker);
+                params.append(MacroExpander::argumentMarker(identifiers.count()));
+                params.append(spell);
+                params.append(MacroExpander::EndArgumentMarker);
+                identifiers.append(i);
+            }
+            else
+                params.append(spell);
+        }
 
-                    //Paramter offset from beginning of macro
-                    if (usedArgs.testBit(argIdx) == false) {
-                        usedArgs.setBit(argIdx, true);
+        //Expand the macro
+        QByteArray result;
+        result.reserve(256);
+        expand(params, &result);
 
-                        //Count line offset from the argument to the beginning of 'current' token (_dot)
-                        int extralines = 0;
-                        const char * beginOfArg = _source.constData()+lastArg.position();
-                        for(const char * it = startOfToken(*_dot); it > beginOfArg; it--)
-                            if (*it == '\n')
-                                extralines--;
-
-                        (void)markGeneratedTokens(was, lastArg.position(), extralines);
-                        out(QByteArray(_source.constData()+lastArg.position(), lastArg.length()));
-                        do {
-                            ptr++;
-                        } while(ptr < end && *ptr!=MacroExpander::EndArgumentMarker);
-                        (void)markGeneratedTokens(true, lastArg.position() + lastArg.length(), extralines);
+        //Replace markers in the expanded macro
+        const char * ptr = result.constData();
+        const char * end = ptr + result.length();
+        while(ptr < end) {
+            switch(*ptr)
+            {
+            case MacroExpander::BeginArgumentMarker:
+                if (ptr+MacroExpander::ArgumentWidth < end) {
+                    bool ok;
+                    int argIdx = QByteArray(++ptr, MacroExpander::ArgumentWidth).toInt(&ok, 16);
+                    ptr += MacroExpander::ArgumentWidth-1;
+                    if (ok && ptr[1] != MacroExpander::EndArgumentMarker && argIdx >= 0 && argIdx < identifiers.count() && identifiers.at(argIdx)) {
+                        TokenIterator i = identifiers.at(argIdx);
+                        identifiers[argIdx] = NULL;
+                        (void)markGeneratedTokens(was, i->begin(), i->lineno - _dot->lineno);
+                        out(QByteArray(_source.constData()+i->begin(), i->length()));
+                        (void)markGeneratedTokens(true, i->end(), i->lineno - _dot->lineno);
+                        ptr += i->length();
                     }
                 }
+                break;
+
+            case MacroExpander::EndArgumentMarker:
+                break;
+
+            default:
+                out(*ptr);
+                break;
             }
-            break;
-
-        case MacroExpander::EndArgumentMarker:
-            break;
-
-        default:
-            out(*ptr);
-            break;
+            ptr++;
         }
-        ptr++;
     }
-
+    else {
+        QByteArray result;
+        result.reserve(256);
+        expand(beginOfText, endOfText, &result);
+        out(result);
+    }
     (void) markGeneratedTokens(was);
-
 
     if (client)
         client->stopExpandingMacro(_dot->offset, *m);

@@ -85,3 +85,8 @@ void CircularClipboard::toLastCollect()
 {
     m_current = -1;
 }
+
+int CircularClipboard::size() const
+{
+    return m_items.size();
+}

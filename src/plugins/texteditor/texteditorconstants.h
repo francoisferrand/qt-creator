@@ -102,6 +102,7 @@ const char TASK_DOWNLOAD_DEFINITIONS[] = "TextEditor.Task.Download";
 const char TASK_REGISTER_DEFINITIONS[] = "TextEditor.Task.Register";
 const char TASK_OPEN_FILE[]        = "TextEditor.Task.OpenFile";
 const char CIRCULAR_PASTE[]        = "TextEditor.CircularPaste";
+const char MENU_PASTE[]            = "TextEditor.MenuPaste";
 const char INDENT[]        = "TextEditor.Indent";
 const char UNINDENT[]        = "TextEditor.Unindent";
 

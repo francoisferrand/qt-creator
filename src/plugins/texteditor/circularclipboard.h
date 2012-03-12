@@ -47,6 +47,7 @@ public:
     void collect(const QMimeData *mimeData);
     const QMimeData *next() const;
     void toLastCollect();
+    int size() const;
 
 private:
     CircularClipboard();

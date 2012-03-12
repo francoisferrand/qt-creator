@@ -378,6 +378,13 @@ void TextEditorActionHandler::createActions()
     connect(m_circularPasteAction, SIGNAL(triggered()), this, SLOT(circularPasteAction()));
     medit->addAction(command, Core::Constants::G_EDIT_COPYPASTE);
 
+    m_menuPasteAction = new QAction(tr("Paste from Clipboard History menu"), this);
+    m_modifyingActions << m_menuPasteAction;
+    command = am->registerAction(m_menuPasteAction, Constants::MENU_PASTE, m_contextId, true);
+    command->setDefaultKeySequence(QKeySequence(tr("Ctrl+Alt+V")));
+    connect(m_menuPasteAction, SIGNAL(triggered()), this, SLOT(menuPasteAction()));
+    medit->addAction(command, Core::Constants::G_EDIT_COPYPASTE);
+
     m_indentAction = new QAction(tr("Indent"), this);
     m_modifyingActions << m_indentAction;
     command = am->registerAction(m_indentAction, Constants::INDENT, m_contextId, true);
@@ -588,6 +595,7 @@ FUNCTION2(copyAction, copy)
 FUNCTION2(cutAction, cut)
 FUNCTION2(pasteAction, paste)
 FUNCTION2(circularPasteAction, circularPaste)
+FUNCTION2(menuPasteAction, menuPaste)
 FUNCTION2(formatAction, format)
 FUNCTION2(rewrapParagraphAction, rewrapParagraph)
 FUNCTION2(selectAllAction, selectAll)

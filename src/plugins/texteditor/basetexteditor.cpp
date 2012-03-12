@@ -5838,6 +5838,49 @@ void BaseTextEditorWidget::circularPaste()
     QPlainTextEdit::copy();
 }
 
+void BaseTextEditorWidget::menuPaste()
+{
+    static const int maxLen = 80;
+
+    CircularClipboard *circularClipBoard = CircularClipboard::instance();
+    const QMimeData *mimeData = NULL;
+    if (circularClipBoard->size() > 1) {
+        //Show menu with the possible paste items
+        QMenu menu;
+        QString tabstr(tabSettings().m_tabSize, ' ');
+        for(int i = 0; i < CircularClipboard::instance()->size(); ++i) {
+            const QMimeData * data = CircularClipboard::instance()->next();
+
+            QString text = data->text().trimmed();
+            text.replace('\t', tabstr);
+            text.replace('&', "&&");
+            if (text.length() > maxLen) {
+                text.truncate(maxLen);
+                text.append("...");
+            }
+
+            QAction *action = menu.addAction(QString("&%1 - ").arg(i) + text);
+            action->setData(QVariant((int)data));
+        }
+        menu.setActiveAction(menu.actions()[0]);
+        menu.setFocus();
+
+        //Paste the selected item, if any, and move it to the top of the list
+        if (QAction * action = menu.exec(mapToGlobal(cursorRect().bottomRight())))
+            mimeData = (const QMimeData *)action->data().toInt();
+    } else {
+        //Paste immediately
+        mimeData = CircularClipboard::instance()->next();
+    }
+
+    if (mimeData) {
+        QApplication::clipboard()->setMimeData(duplicateMimeData(mimeData));
+        circularClipBoard->collect(mimeData);
+        circularClipBoard->toLastCollect();
+        emit paste();
+    }
+}
+
 QMimeData *BaseTextEditorWidget::createMimeDataFromSelection() const
 {
     if (d->m_inBlockSelectionMode) {

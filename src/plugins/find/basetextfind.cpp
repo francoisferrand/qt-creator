@@ -127,7 +127,8 @@ bool BaseTextFind::supportsReplace() const
 Find::FindFlags BaseTextFind::supportedFindFlags() const
 {
     return Find::FindBackward | Find::FindCaseSensitively
-            | Find::FindRegularExpression | Find::FindWholeWords;
+            | Find::FindRegularExpression | Find::FindWholeWords
+            | Find::FindPreserveCase;
 }
 
 void BaseTextFind::resetIncrementalSearch()
@@ -219,7 +220,7 @@ QTextCursor BaseTextFind::replaceInternal(const QString &before, const QString &
 {
     QTextCursor cursor = textCursor();
     bool usesRegExp = (findFlags & Find::FindRegularExpression);
-	bool preserveCase = !(findFlags & Find::FindCaseSensitively);
+    bool preserveCase = (findFlags & Find::FindPreserveCase);
     QRegExp regexp(before,
                    (findFlags & Find::FindCaseSensitively) ? Qt::CaseSensitive : Qt::CaseInsensitive,
                    usesRegExp ? QRegExp::RegExp : QRegExp::FixedString);
@@ -258,7 +259,7 @@ int BaseTextFind::replaceAll(const QString &before, const QString &after,
     editCursor.beginEditBlock();
     int count = 0;
     bool usesRegExp = (findFlags & Find::FindRegularExpression);
-	bool preserveCase = !(findFlags & Find::FindCaseSensitively);
+    bool preserveCase = (findFlags & Find::FindPreserveCase);
     QRegExp regexp(before);
     regexp.setPatternSyntax(usesRegExp ? QRegExp::RegExp : QRegExp::FixedString);
     regexp.setCaseSensitivity((findFlags & Find::FindCaseSensitively) ? Qt::CaseSensitive : Qt::CaseInsensitive);

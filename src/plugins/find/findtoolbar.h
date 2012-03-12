@@ -94,6 +94,7 @@ private slots:
     void setCaseSensitive(bool sensitive);
     void setWholeWord(bool wholeOnly);
     void setRegularExpressions(bool regexp);
+    void setPreserveCase(bool preserveCase);
 
     void adaptToCandidate();
 
@@ -135,6 +136,7 @@ private:
     QAction *m_caseSensitiveAction;
     QAction *m_wholeWordAction;
     QAction *m_regularExpressionAction;
+    QAction *m_preserveCaseAction;
     Find::FindFlags m_findFlags;
 
     QTimer m_findIncrementalTimer;

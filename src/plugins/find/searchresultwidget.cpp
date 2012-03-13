@@ -144,6 +144,9 @@ SearchResultWidget::SearchResultWidget(QWidget *parent) :
     m_replaceButton->setText(tr("Replace"));
     m_replaceButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
     m_replaceButton->setEnabled(false);
+    m_preserveCaseCheck = new QCheckBox(topWidget);
+    m_preserveCaseCheck->setText(tr("Preserve case"));
+    m_preserveCaseCheck->setEnabled(false);
 
     m_matchesFoundLabel = new QLabel(topWidget);
     updateMatchesFoundLabel();
@@ -154,6 +157,7 @@ SearchResultWidget::SearchResultWidget(QWidget *parent) :
     topLayout->addWidget(m_replaceLabel);
     topLayout->addWidget(m_replaceTextEdit);
     topLayout->addWidget(m_replaceButton);
+    topLayout->addWidget(m_preserveCaseCheck);
     topLayout->addStretch(2);
     topLayout->addWidget(m_matchesFoundLabel);
     topWidget->setMinimumHeight(m_cancelButton->sizeHint().height()
@@ -248,6 +252,7 @@ void SearchResultWidget::setShowReplaceUI(bool visible)
     m_replaceLabel->setVisible(visible);
     m_replaceTextEdit->setVisible(visible);
     m_replaceButton->setVisible(visible);
+    m_preserveCaseCheck->setVisible(visible);
     m_isShowingReplaceUI = visible;
 }
 
@@ -351,6 +356,7 @@ void SearchResultWidget::finishSearch()
 {
     m_replaceTextEdit->setEnabled(m_count > 0);
     m_replaceButton->setEnabled(m_count > 0);
+    m_preserveCaseCheck->setEnabled(m_count > 0);
     m_cancelButton->setVisible(false);
     m_searchAgainButton->setVisible(m_searchAgainSupported);
 }
@@ -372,7 +378,7 @@ void SearchResultWidget::handleReplaceButton()
     // by pressing return in replace line edit
     if (m_replaceButton->isEnabled()) {
         m_infoBar.clear();
-        emit replaceButtonClicked(m_replaceTextEdit->text(), checkedItems());
+        emit replaceButtonClicked(m_replaceTextEdit->text(), checkedItems(), m_preserveCaseCheck->isChecked());
     }
 }
 

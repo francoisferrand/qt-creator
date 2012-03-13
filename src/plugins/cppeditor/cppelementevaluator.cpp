@@ -51,6 +51,9 @@
 #include <cplusplus/LookupContext.h>
 #include <cplusplus/LookupItem.h>
 #include <cplusplus/Icons.h>
+#include <cplusplus/AST.h>
+#include <cplusplus/ASTVisitor.h>
+#include <cplusplus/TranslationUnit.h>
 
 #include <QDir>
 #include <QFileInfo>
@@ -74,6 +77,120 @@ namespace {
         }
         return all;
     }
+
+    class ConstantExpressionEvaluator : public ASTVisitor {
+    public:
+        static bool eval(int * result, const QString& expression)
+        {
+            Document::Ptr doc = Document::create(QLatin1String("<ConstantExpressionEvaluator>"));
+            doc->setUtf8Source(expression.toUtf8());
+            if (doc->parse(Document::ParseExpression)) {
+                ConstantExpressionEvaluator evaluator(doc->translationUnit());
+                evaluator.accept(doc->translationUnit()->ast());
+                *result = evaluator._result;
+                return !evaluator._error;
+            }
+            return false;
+        }
+
+    private:
+        int _result;
+        bool _error;
+
+        ConstantExpressionEvaluator(TranslationUnit * translationUnit):
+            ASTVisitor(translationUnit), _result(0), _error(false)
+        {}
+
+        virtual bool preVisit(AST *)
+        {
+            return !_error;
+        }
+
+        virtual bool visit(BoolLiteralAST * ast)
+        {
+            _result = tokenKind(ast->literal_token) == T_TRUE ? 1 : 0;
+            return false;
+        }
+
+        virtual bool visit(NumericLiteralAST * ast)
+        {
+            bool ok;
+            _result = QString(tokenAt(ast->literal_token).spell()).toInt(&ok, 0);
+            if (!ok)
+                _error = true;
+            return false;
+        }
+
+        virtual bool visit(PointerLiteralAST * ast)
+        {
+            _result = tokenKind(ast->literal_token) == T_NULLPTR ? 1 : 0;
+            return false;
+        }
+
+        virtual bool visit(StringLiteralAST * /*ast*/)
+        {
+            _result = 1;
+            return false;
+        }
+
+        virtual bool visit(UnaryExpressionAST * ast)
+        {
+            accept(ast->expression);
+            switch (tokenKind(ast->unary_op_token)) {
+            case T_TILDE:       _result = ~_result; break;
+            case T_EXCLAIM:     _result = !_result; break;
+            default:            _error = true; break;
+            }
+            return false;
+        }
+
+        virtual bool visit(BinaryExpressionAST * ast)
+        {
+            accept(ast->left_expression);
+            int leftResult = _result;
+            accept(ast->right_expression);
+            int rightResult = _result;
+            switch (tokenKind(ast->binary_op_token)) {
+            case T_PLUS:            _result = leftResult + rightResult; break;
+            case T_MINUS:           _result = leftResult - rightResult; break;
+            case T_STAR:            _result = leftResult * rightResult; break;
+            case T_SLASH:           _result = leftResult / rightResult; break;
+            case T_PERCENT:         _result = leftResult % rightResult; break;
+            case T_CARET:           _result = leftResult ^ rightResult; break;
+            case T_AMPER:           _result = leftResult & rightResult; break;
+            case T_PIPE:            _result = leftResult | rightResult; break;
+            case T_LESS:            _result = leftResult < rightResult; break;
+            case T_GREATER:         _result = leftResult > rightResult; break;
+            case T_LESS_LESS:       _result = leftResult << rightResult; break;
+            case T_GREATER_GREATER: _result = leftResult >> rightResult; break;
+            case T_EXCLAIM_EQUAL:   _result = leftResult != rightResult; break;
+            case T_LESS_EQUAL:      _result = leftResult <= rightResult; break;
+            case T_GREATER_EQUAL:   _result = leftResult >= rightResult; break;
+            case T_AMPER_AMPER:     _result = leftResult && rightResult; break;
+            case T_PIPE_PIPE:       _result = leftResult || rightResult; break;
+            default:                _error = true; break;
+            }
+            return false;
+        }
+
+        virtual bool visit(CompoundExpressionAST * ast)
+        {
+            accept(ast->statement->statement_list->lastValue());
+            return false;
+        }
+
+        virtual bool visit(ConditionalExpressionAST * ast)
+        {
+            // evaluate condition, then return evaluation of appropriate side
+            accept(ast->condition);
+            accept(_result ? ast->left_expression : ast->right_expression);
+            return false;
+        }
+
+        virtual bool visit(CastExpressionAST *)     { _error = true; return true; }
+        virtual bool visit(CppCastExpressionAST *)  { _error = true; return true; }
+        virtual bool visit(SizeofExpressionAST *)   { _error = true; return true; }
+    };
 }
 
 CppElementEvaluator::CppElementEvaluator(CPPEditorWidget *editor) :
@@ -594,13 +711,12 @@ CppEnumerator::CppEnumerator(CPlusPlus::EnumeratorDeclaration *declaration)
         enumeratorValue = QString::fromUtf8(value->chars(), value->size());
     }
 
-    static QScriptEngine engine;
-    QScriptValue val = engine.evaluate(enumeratorValue);
-    if (!engine.hasUncaughtException() && val.isNumber()) {
+    int value;
+    if (ConstantExpressionEvaluator::eval(&value, enumeratorValue)) {
         if (enumeratorValue.contains("0x", Qt::CaseInsensitive))
-            enumeratorValue = QString("0x") + QString::number(val.toInt32(), 16);
+            enumeratorValue = QString("0x") + QString::number(value, 16);
         else
-            enumeratorValue = QString::number(val.toInt32());
+            enumeratorValue = QString::number(value);
     }
 
     setHelpMark(overview.prettyName(enumSymbol->name()));

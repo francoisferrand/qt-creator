@@ -34,6 +34,8 @@
 #define SEARCHRESULTTREEITEMDELEGATE_H
 
 #include <QItemDelegate>
+#include <QTextLayout>
+#include <QTextOption>
 
 namespace Find {
 namespace Internal {
@@ -46,9 +48,12 @@ public:
 
 private:
     int drawLineNumber(QPainter *painter, const QStyleOptionViewItemV3 &option, const QRect &rect, const QModelIndex &index) const;
-    void drawMarker(QPainter *painter, const QModelIndex &index, const QString text, const QRect &rect) const;
+    QSizeF doTextLayout(int lineWidth) const;
+    void drawDisplay(QPainter *painter, const QStyleOptionViewItem &option, const QRect &rect, QString text, int searchTermStart, int searchTermLength) const;
 
     static const int m_minimumLineNumberDigits = 6;
+    mutable QTextLayout textLayout;
+    mutable QTextOption textOption;
 };
 
 } // namespace Internal

@@ -97,11 +97,8 @@ void SearchResultTreeItemDelegate::paint(QPainter *painter, const QStyleOptionVi
     int lineNumberAreaWidth = drawLineNumber(painter, opt, textRect, index);
     textRect.adjust(lineNumberAreaWidth, 0, 0, 0);
 
-    // selected text
-    QString displayString = index.model()->data(index, Qt::DisplayRole).toString();
-    drawMarker(painter, index, displayString, textRect);
-
     // show number of subresults in displayString
+    QString displayString = index.model()->data(index, Qt::DisplayRole).toString();
     if (index.model()->hasChildren(index)) {
         displayString += QString::fromLatin1(" (")
                          + QString::number(index.model()->rowCount(index))
@@ -109,7 +106,9 @@ void SearchResultTreeItemDelegate::paint(QPainter *painter, const QStyleOptionVi
     }
 
     // text and focus/selection
-    QItemDelegate::drawDisplay(painter, opt, textRect, displayString);
+    drawDisplay(painter, opt, textRect, displayString,
+                index.model()->data(index, ItemDataRoles::SearchTermStartRole).toInt(),
+                index.model()->data(index, ItemDataRoles::SearchTermLengthRole).toInt());
     QItemDelegate::drawFocus(painter, opt, opt.rect);
 
     // check mark
@@ -159,20 +158,121 @@ int SearchResultTreeItemDelegate::drawLineNumber(QPainter *painter, const QStyle
     return lineNumberAreaWidth;
 }
 
-void SearchResultTreeItemDelegate::drawMarker(QPainter *painter, const QModelIndex &index, const QString text,
-                                              const QRect &rect) const
+QSizeF SearchResultTreeItemDelegate::doTextLayout(int lineWidth) const
 {
-    int searchTermStart = index.model()->data(index, ItemDataRoles::SearchTermStartRole).toInt();
-    int searchTermLength = index.model()->data(index, ItemDataRoles::SearchTermLengthRole).toInt();
-    if (searchTermStart < 0 || searchTermStart >= text.length() || searchTermLength < 1)
+    QFontMetrics fontMetrics(textLayout.font());
+    int leading = fontMetrics.leading();
+    qreal height = 0;
+    qreal widthUsed = 0;
+    textLayout.beginLayout();
+    while (true) {
+        QTextLine line = textLayout.createLine();
+        if (!line.isValid())
+            break;
+        line.setLineWidth(lineWidth);
+        height += leading;
+        line.setPosition(QPointF(0, height));
+        height += line.height();
+        widthUsed = qMax(widthUsed, line.naturalTextWidth());
+    }
+    textLayout.endLayout();
+    return QSizeF(widthUsed, height);
+}
+
+void SearchResultTreeItemDelegate::drawDisplay(QPainter *painter, const QStyleOptionViewItem &option,
+                                               const QRect &rect, QString text,
+                                               int searchTermStart, int searchTermLength) const
+{
+    if (text.isEmpty())
         return;
-    // clip searchTermLength to end of line
-    searchTermLength = qMin(searchTermLength, text.length() - searchTermStart);
+
+    QPen pen = painter->pen();
+    QPalette::ColorGroup cg = option.state & QStyle::State_Enabled
+                              ? QPalette::Normal : QPalette::Disabled;
+    if (cg == QPalette::Normal && !(option.state & QStyle::State_Active))
+        cg = QPalette::Inactive;
+    if (option.state & QStyle::State_Selected) {
+        painter->fillRect(rect, option.palette.brush(cg, QPalette::Highlight));
+        painter->setPen(option.palette.color(cg, QPalette::HighlightedText));
+    } else {
+        painter->setPen(option.palette.color(cg, QPalette::Text));
+    }
+
+    if (option.state & QStyle::State_Editing) {
+        painter->save();
+        painter->setPen(option.palette.color(cg, QPalette::Text));
+        painter->drawRect(rect.adjusted(0, 0, -1, -1));
+        painter->restore();
+    }
+
+    const QStyleOptionViewItemV2 opt = option;
     const int textMargin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-    int searchTermStartPixels = painter->fontMetrics().width(text.left(searchTermStart));
-    int searchTermLengthPixels = painter->fontMetrics().width(text.mid(searchTermStart, searchTermLength));
-    QRect resultHighlightRect(rect);
-    resultHighlightRect.setLeft(resultHighlightRect.left() + searchTermStartPixels + textMargin - 1); // -1: Cosmetics
-    resultHighlightRect.setRight(resultHighlightRect.left() + searchTermLengthPixels + 1); // +1: Cosmetics
-    painter->fillRect(resultHighlightRect, QBrush(qRgb(255, 240, 120)));
+    QRect textRect = rect.adjusted(textMargin, 0, -textMargin, 0); // remove width padding
+    const bool wrapText = opt.features & QStyleOptionViewItemV2::WrapText;
+    textOption.setWrapMode(wrapText ? QTextOption::WordWrap : QTextOption::ManualWrap);
+    textOption.setTextDirection(option.direction);
+    textOption.setAlignment(QStyle::visualAlignment(option.direction, option.displayAlignment));
+    textOption.setTabStop(option.fontMetrics.width(QLatin1Char(' ')) * 4);  ///TODO: make configurable!
+    textLayout.setTextOption(textOption);
+    textLayout.setFont(option.font);
+    textLayout.setText(text.replace('\n', QChar::LineSeparator));
+
+    QSizeF textLayoutSize = doTextLayout(textRect.width());
+
+    if (textRect.width() < textLayoutSize.width() || textRect.height() < textLayoutSize.height()) {
+        const QChar ellipsis(0x2026);   //TODO: may be "..." in some case (if not supported by font...)
+
+        Qt::TextElideMode elideMode = option.textElideMode;
+        if (option.direction == Qt::RightToLeft) {
+            if (elideMode == Qt::ElideRight)
+                elideMode = Qt::ElideLeft;
+            else if (elideMode == Qt::ElideLeft)
+                elideMode = Qt::ElideRight;
+        }
+
+        switch (elideMode) {
+        case Qt::ElideRight: {
+            int left = textLayout.lineAt(0)
+                                 .xToCursor(textRect.width() - option.fontMetrics.width(ellipsis));
+            textLayout.setText(text.left(left) + ellipsis);
+            textLayoutSize = doTextLayout(textRect.width());
+            }break;
+
+        case Qt::ElideLeft: {
+            //TODO: 'end' pos is not correct w/ multi-line: last line may not reach the end....
+            int right = textLayout.lineAt(textLayout.lineCount()-1)
+                                  .xToCursor(textLayoutSize.width() - textRect.width() + option.fontMetrics.width(ellipsis));
+            textLayout.setText(ellipsis + text.mid(right));
+            textLayoutSize = doTextLayout(textRect.width());
+            searchTermStart -= right - 1;
+            }break;
+
+        case Qt::ElideMiddle: {
+            int left = textLayout.lineAt(0)
+                                 .xToCursor((textRect.width() - option.fontMetrics.width(ellipsis)) / 2);
+            //TODO: 'end' pos is not correct w/ multi-line: last line may not reach the end....
+            int right = textLayout.lineAt(textLayout.lineCount()-1)
+                                  .xToCursor((textLayoutSize.width() - textRect.width() - option.fontMetrics.width(ellipsis)) / 2);
+            textLayout.setText(text.left(left) + ellipsis + text.mid(right));
+            textLayoutSize = doTextLayout(textRect.width());
+            //TODO: update highlight range to match ellipsis
+            }break;
+
+        case Qt::ElideNone:
+            break;
+        }
+    }
+
+    textRect.setTop(textRect.top() + (textRect.height()/2) - (textLayoutSize.toSize().height()/2));
+
+    if (searchTermStart >= 0 && searchTermStart < text.length() && searchTermLength >= 1 &&
+        !(option.state & QStyle::State_Selected)) {
+        QTextLayout::FormatRange range;
+        range.start = searchTermStart;
+        range.length = searchTermLength;
+        range.format.setBackground(QBrush(qRgb(255, 240, 120)));
+        textLayout.draw(painter, textRect.topLeft(), QVector<QTextLayout::FormatRange>() << range, textRect);
+    }
+    else
+        textLayout.draw(painter, textRect.topLeft(), QVector<QTextLayout::FormatRange>(), textRect);
 }

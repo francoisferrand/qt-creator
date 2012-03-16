@@ -49,7 +49,7 @@ QByteArray FastPreprocessor::run(Document::Ptr newDoc, const QByteArray &source)
     _addIncludesToCurrentDoc = _currentDoc->resolvedIncludes().isEmpty()
             && _currentDoc->unresolvedIncludes().isEmpty();
     const QString fileName = _currentDoc->fileName();
-    _preproc.setExpandFunctionlikeMacros(false);
+    _preproc.setExpandFunctionlikeMacros(true);
     _preproc.setKeepComments(true);
 
     if (Document::Ptr doc = _snapshot.document(fileName)) {

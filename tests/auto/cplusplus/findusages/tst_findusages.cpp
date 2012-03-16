@@ -120,6 +120,7 @@ private Q_SLOTS:
     void inAlignas();
 
     void memberAccessAsTemplate();
+    void macroExpansion();
 };
 
 void tst_FindUsages::dump(const QList<Usage> &usages) const
@@ -1079,6 +1080,37 @@ void tst_FindUsages::memberAccessAsTemplate()
         QCOMPARE(find.usages()[1].line, 11);
         QCOMPARE(find.usages()[1].col, 11);
     }
+}
+
+void tst_FindUsages::macroExpansion()
+{
+    const QByteArray src = "\n"
+                           "#define FOO(x, y) \\\n"
+                           "   + x \\\n"
+                           "   + y \\\n"
+                           "   + x \\\n"
+                           "   + y\n"
+                           "int a;\n"
+                           "int b = FOO(a, a);\n";
+    Document::Ptr doc = Document::create("macroExpansion");
+    doc->setUtf8Source(src);
+    doc->parse();
+    doc->check();
+
+    QVERIFY(doc->diagnosticMessages().isEmpty());
+    QCOMPARE(doc->globalSymbolCount(), 2U);
+
+    Snapshot snapshot;
+    snapshot.insert(doc);
+
+    Declaration *tst = doc->globalSymbolAt(0)->asDeclaration();
+    QVERIFY(tst);
+    QCOMPARE(tst->name()->identifier()->chars(), "a");
+
+    FindUsages findUsages(src, doc, snapshot);
+    findUsages(tst);
+    QCOMPARE(findUsages.usages().size(), 3);
+    QCOMPARE(findUsages.references().size(), 3);
 }
 
 QTEST_APPLESS_MAIN(tst_FindUsages)

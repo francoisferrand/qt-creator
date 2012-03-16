@@ -90,6 +90,7 @@ void FindUsages::operator()(Symbol *symbol)
         return;
 
     _processed.clear();
+    _reported.clear();
     _references.clear();
     _usages.clear();
     _declSymbol = symbol;
@@ -165,14 +166,19 @@ void FindUsages::reportResult(unsigned tokenIndex)
 
     unsigned line, col;
     getTokenStartPosition(tokenIndex, &line, &col);
+    if (col)
+        --col;  // adjust the column position.
+
+    // Do not report duplicated usages, e.g. from macro expansion
+    if (_reported.contains(qMakePair(line, col)))
+        return;
+    _reported.insert(qMakePair(line, col));
+
     QString lineText;
     if (line < _sourceLineEnds.size())
         lineText = fetchLine(line);
     else
         lineText = matchingLine(tk);
-
-    if (col)
-        --col;  // adjust the column position.
 
     const int len = tk.utf16chars();
 

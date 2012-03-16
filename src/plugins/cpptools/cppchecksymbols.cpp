@@ -322,8 +322,6 @@ CheckSymbols::CheckSymbols(Document::Ptr doc, const LookupContext &context, cons
     : ASTVisitor(doc->translationUnit()), _doc(doc), _context(context)
     , _lineOfLastUsage(0), _macroUses(macroUses)
 {
-    qSort(_macroUses.begin(), _macroUses.end(), sortByLinePredicate);
-
     CollectSymbols collectTypes(doc, context.snapshot());
 
     _fileName = doc->fileName();
@@ -341,11 +339,14 @@ CheckSymbols::~CheckSymbols()
 
 void CheckSymbols::run()
 {
+    qSort(_macroUses.begin(), _macroUses.end(), sortByLinePredicate);
     _diagnosticMessages.clear();
 
     if (! isCanceled()) {
         if (_doc->translationUnit()) {
             accept(_doc->translationUnit()->ast());
+            while (!_macroUses.isEmpty())
+                _usages.append(_macroUses.takeFirst());
             flush();
         }
     }

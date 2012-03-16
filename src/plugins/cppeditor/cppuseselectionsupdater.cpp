@@ -424,6 +424,7 @@ ExtraSelections CppUseSelectionsUpdater::toExtraSelections(const QList<int> &ref
 
     QTC_ASSERT(m_document, return selections);
 
+    QSet<int> highlightedSymbolPositions;
     foreach (int index, references) {
         unsigned line, column;
         TranslationUnit *unit = m_document->translationUnit();
@@ -437,6 +438,11 @@ ExtraSelections CppUseSelectionsUpdater::toExtraSelections(const QList<int> &ref
         QTextCursor cursor(textDocument()->findBlockByNumber(line - 1));
         cursor.setPosition(cursor.position() + column);
         cursor.setPosition(cursor.position() + len, QTextCursor::KeepAnchor);
+
+        //Do not highlight twice the same position which may happen for macro parameters
+        if (highlightedSymbolPositions.contains(cursor.anchor()))
+            continue;
+        highlightedSymbolPositions.insert(cursor.anchor());
 
         selections.append(extraSelection(textCharFormat(style), cursor));
     }

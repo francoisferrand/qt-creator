@@ -299,6 +299,7 @@ private:
     QList<int> _references;
     QList<Usage> _usages;
     QSet<unsigned> _processed;
+    QSet<QPair<int,int>> _reported;
     TypeOfExpression typeofExpression;
     Scope *_currentScope;
 };

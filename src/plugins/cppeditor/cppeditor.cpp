@@ -849,6 +849,7 @@ void CPPEditorWidget::markSymbolsNow()
     const QList<int> result = m_references.result();
 
     QList<QTextEdit::ExtraSelection> selections;
+    QSet<int> highlightedSymbolPositions;
 
     foreach (int index, result) {
         unsigned line, column;
@@ -863,11 +864,15 @@ void CPPEditorWidget::markSymbolsNow()
         cursor.setPosition(cursor.position() + column);
         cursor.setPosition(cursor.position() + len, QTextCursor::KeepAnchor);
 
+        //Do not highlight twice the same position which may happen for macro parameters
+        if (highlightedSymbolPositions.contains(cursor.anchor()))
+            continue;
+        highlightedSymbolPositions.insert(cursor.anchor());
+
         QTextEdit::ExtraSelection sel;
         sel.format = m_occurrencesFormat;
         sel.cursor = cursor;
         selections.append(sel);
-
     }
 
     setExtraSelections(CodeSemanticsSelection, selections);

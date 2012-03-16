@@ -42,6 +42,7 @@ public:
 
     // local and external uses.
     SemanticInfo::LocalUseMap localUses;
+    QHash<CPlusPlus::Symbol *, QSet<QPair<int,int>>> m_processed;
 
     void operator()(DeclarationAST *ast)
     {
@@ -80,6 +81,9 @@ protected:
                         const Token token = tokenAt(member->sourceLocation());
                         int line, column;
                         getPosition(token.utf16charsBegin(), &line, &column);
+                        if (m_processed[member].contains(qMakePair(line, column)))
+                            continue;
+                        m_processed[member].insert(qMakePair(line, column));
                         localUses[member].append(
                                     HighlightingResult(line, column, token.utf16chars(),
                                                        SemanticHighlighter::LocalUse));
@@ -104,6 +108,9 @@ protected:
                                                    || member->enclosingScope()->isFunction())) {
                         int line, column;
                         getTokenStartPosition(simpleName->identifier_token, &line, &column);
+                        if (m_processed[member].contains(qMakePair(line, column)))
+                            continue;
+                        m_processed[member].insert(qMakePair(line, column));
                         localUses[member].append(
                                     HighlightingResult(line, column, token.utf16chars(),
                                                        SemanticHighlighter::LocalUse));

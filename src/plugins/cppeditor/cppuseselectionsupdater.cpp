@@ -174,6 +174,8 @@ CppUseSelectionsUpdater::toExtraSelections(const CursorInfo::Ranges &ranges,
     CppUseSelectionsUpdater::ExtraSelections selections;
     selections.reserve(ranges.size());
 
+    QSet<int> highlightedSymbolPositions;
+    highlightedSymbolPositions.reserve(ranges.size());
     for (const CursorInfo::Range &range : ranges) {
         QTextDocument *document = m_editorWidget->document();
         const int position
@@ -186,6 +188,11 @@ CppUseSelectionsUpdater::toExtraSelections(const CursorInfo::Ranges &ranges,
         sel.cursor = QTextCursor(document);
         sel.cursor.setPosition(anchor);
         sel.cursor.setPosition(position, QTextCursor::KeepAnchor);
+
+        //Do not highlight twice the same position which may happen for macro parameters
+        if (highlightedSymbolPositions.contains(sel.cursor.anchor()))
+            continue;
+        highlightedSymbolPositions.insert(sel.cursor.anchor());
 
         selections.append(sel);
     }

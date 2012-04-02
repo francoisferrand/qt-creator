@@ -168,7 +168,6 @@ private:
     LookupContext _context;
     TypeOfExpression typeOfExpression;
     QString _fileName;
-    QList<Document::DiagnosticMessage> _diagnosticMessages;
     QSet<QByteArray> _potentialTypes;
     QSet<QByteArray> _potentialMembers;
 	QSet<QByteArray> _potentialFunctions;

@@ -340,7 +340,7 @@ CheckSymbols::~CheckSymbols()
 void CheckSymbols::run()
 {
     qSort(_macroUses.begin(), _macroUses.end(), sortByLinePredicate);
-    _diagnosticMessages.clear();
+    _doc->clearDiagnosticMessages();
 
     if (! isCanceled()) {
         if (_doc->translationUnit()) {

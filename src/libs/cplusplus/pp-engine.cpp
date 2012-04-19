@@ -740,8 +740,6 @@ void Preprocessor::skipToNextLine()
                 // This function does not output tokens it skips. We need to offset
                 // the currentLine so it gets correctly adjusted by processNewline.
                 env->currentLine -= newlines;
-                ++_dot;
-                return;
             }
         }
 

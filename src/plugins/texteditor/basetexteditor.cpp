@@ -5843,6 +5843,10 @@ void BaseTextEditorWidget::menuPaste()
     static const int maxLen = 80;
 
     CircularClipboard *circularClipBoard = CircularClipboard::instance();
+    if (const QMimeData *clipboardData = QApplication::clipboard()->mimeData()) {
+        circularClipBoard->collect(duplicateMimeData(clipboardData));
+        circularClipBoard->toLastCollect();
+    }
     const QMimeData *mimeData = NULL;
     if (circularClipBoard->size() > 1) {
         //Show menu with the possible paste items

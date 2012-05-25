@@ -213,6 +213,7 @@ ActionContainer *ActionManager::createMenuBar(const Id &id)
 
     QMenuBar *mb = new QMenuBar; // No parent (System menu bar on Mac OS X)
     mb->setObjectName(id.toString());
+    mb->setProperty("_q_custom_style_disabled", true);
 
     MenuBarActionContainer *mbc = new MenuBarActionContainer(id);
     mbc->setMenuBar(mb);

@@ -1265,10 +1265,31 @@ Core::Id EditorManager::getOpenWithEditorId(const QString &fileName,
     return selectedId;
 }
 
+static bool matchCurrentEditor(EditorView *view, const QString &fileName, const Id &editorId)
+{
+    if (IEditor *editor = view->currentEditor())
+        if (IDocument *doc = editor->document())
+            if (doc->fileName() == fileName && (!editorId.isValid() || editorId == editor->id()))
+                return true;
+    return false;
+}
+
 IEditor *EditorManager::openEditor(const QString &fileName, const Id &editorId,
                                    OpenEditorFlags flags, bool *newEditor)
 {
-    return m_instance->openEditor(m_instance->currentEditorView(), fileName, editorId, flags, newEditor);
+    EditorView *view = m_instance->currentEditorView();
+    if (!matchCurrentEditor(view, fileName, editorId)) {
+        SplitterOrView *splitter = m_instance->topSplitterOrView()->findFirstView();
+        while (splitter) {
+            if (EditorView *v = splitter->view())
+                if (matchCurrentEditor(v, fileName, editorId)) {
+                    view = v;
+                    break;
+                }
+            splitter = m_instance->topSplitterOrView()->findNextView(splitter);
+        }
+    }
+    return m_instance->openEditor(view, fileName, editorId, flags, newEditor);
 }
 
 static int extractLineNumber(QString *fileName)

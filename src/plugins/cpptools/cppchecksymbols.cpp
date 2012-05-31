@@ -1094,15 +1094,23 @@ void CheckSymbols::addVirtualMethod(const QList<LookupItem> &candidates, NameAST
                         //    If this is an object with a 'call' operator (a functor), check the arguments count.
                         //How to color functor calls??? as function or variable? or a dedicated color?
 
-        kind = funTy->isVirtual() ? SemanticInfo::VirtualMethodUse : SemanticInfo::FunctionUse;
         if (argumentCount < funTy->minimumArgumentCount()) {
-            matchType = Match_TooFewArgs;
-        }
-        else if (argumentCount > funTy->argumentCount() && ! funTy->isVariadic()) {
-            matchType = Match_TooManyArgs;
-        }
-        else {
+            if (matchType != Match_Ok) {
+                kind = funTy->isVirtual() ? SemanticInfo::VirtualMethodUse : SemanticInfo::FunctionUse;
+                matchType = Match_TooFewArgs;
+            }
+        } else if (argumentCount > funTy->argumentCount() && ! funTy->isVariadic()) {
+            if (matchType != Match_Ok) {
+                matchType = Match_TooManyArgs;
+                kind = funTy->isVirtual() ? SemanticInfo::VirtualMethodUse : SemanticInfo::FunctionUse;
+            }
+        } else if (!funTy->isVirtual()) {
             matchType = Match_Ok;
+            kind = SemanticInfo::FunctionUse;
+            //continue, to check if there is a matching candidate which is virtual
+        } else {
+            matchType = Match_Ok;
+            kind = SemanticInfo::VirtualMethodUse;
             break;
         }
     }

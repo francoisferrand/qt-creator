@@ -1256,7 +1256,7 @@ IEditor *EditorManager::openEditor(const QString &fileName, const Id &editorId,
     return openEditor(currentEditorView(), fileName, editorId, flags, newEditor);
 }
 
-int extractLineNumber(QString *fileName)
+static int extractLineNumber(QString *fileName)
 {
     int i = fileName->length() - 1;
     for (; i >= 0; --i) {
@@ -1267,7 +1267,10 @@ int extractLineNumber(QString *fileName)
         return -1;
     const QChar c = fileName->at(i);
     if (c == QLatin1Char(':') || c == QLatin1Char('+')) {
-        if (const int result = fileName->mid(i + 1).toInt()) {
+        bool ok;
+        const QString suffix = fileName->mid(i + 1);
+        const int result = suffix.toInt(&ok);
+        if (suffix.isEmpty() || ok) {
             fileName->truncate(i);
             return result;
         }

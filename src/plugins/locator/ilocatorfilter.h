@@ -151,6 +151,29 @@ public:
         return str.mid(first, last-first+1);
     }
 
+    /* Extract line number suffix. Return the suffix (e.g. ":132") and truncates the filename accordingly.*/
+    static QString extractLineNumber(QString *fileName)
+    {
+        int i = fileName->length() - 1;
+        for (; i >= 0; --i) {
+            if (!fileName->at(i).isNumber())
+                break;
+        }
+        if (i == -1)
+            return QString();
+        const QChar c = fileName->at(i);
+        if (c == QLatin1Char(':') || c == QLatin1Char('+')) {
+            const QString result = fileName->mid(i + 1);
+            bool ok;
+            result.toInt(&ok);
+            if (result.isEmpty() || ok) {
+                fileName->truncate(i);
+                return QString(c) + result;
+            }
+        }
+        return QString();
+    }
+
 public slots:
     /* Enable or disable the filter. */
     void setEnabled(bool enabled);

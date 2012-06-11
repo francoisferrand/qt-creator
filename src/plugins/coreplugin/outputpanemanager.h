@@ -83,6 +83,7 @@ private slots:
     void clearPage();
     void buttonTriggered();
     void updateNavigateState();
+    void flashButton();
 
 private:
     // the only class that is allowed to create and destroy
@@ -132,14 +133,20 @@ public:
                            QWidget *parent = 0);
     QSize sizeHint() const;
     void paintEvent(QPaintEvent *event);
+    void flash(int count = 5);
 
 private slots:
     void updateToolTip();
+    void flashTimer();
 
 private:
+    virtual void checkStateSet();
+
     QString m_number;
     QString m_text;
     QAction *m_action;
+    QTimer *m_flashTimer;
+    int     m_flashCount;
 };
 
 } // namespace Internal

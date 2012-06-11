@@ -66,6 +66,7 @@
 #include <QToolButton>
 #include <QStackedWidget>
 #include <QMenu>
+#include <QTimer>
 
 namespace Core {
 namespace Internal {
@@ -258,6 +259,7 @@ void OutputPaneManager::init()
         connect(outPane, SIGNAL(hidePage()), this, SLOT(slotHide()));
         connect(outPane, SIGNAL(togglePage(bool)), this, SLOT(togglePage(bool)));
         connect(outPane, SIGNAL(navigateStateUpdate()), this, SLOT(updateNavigateState()));
+        connect(outPane, SIGNAL(flashButton()), this, SLOT(flashButton()));
 
         QWidget *toolButtonsContainer = new QWidget(m_opToolBarWidgets);
         QHBoxLayout *toolButtonsLayout = new QHBoxLayout;
@@ -434,6 +436,14 @@ void OutputPaneManager::updateNavigateState()
     }
 }
 
+void OutputPaneManager::flashButton()
+{
+    IOutputPane* pane = qobject_cast<IOutputPane*>(sender());
+    int idx = findIndexForPage(pane);
+    if (pane)
+        static_cast<OutputPaneToggleButton *>(m_buttons.value(idx))->flash();
+}
+
 // Slot connected to showPage signal of each page
 void OutputPaneManager::showPage(bool focus, bool ensureSizeHint)
 {
@@ -522,13 +532,14 @@ void OutputPaneManager::clearPage()
         m_pageMap.value(m_outputWidgetPane->currentIndex())->clearContents();
 }
 
-
 OutputPaneToggleButton::OutputPaneToggleButton(int number, const QString &text,
                                                QAction *action, QWidget *parent)
     : QToolButton(parent)
     , m_number(QString::number(number))
     , m_text(text)
     , m_action(action)
+    , m_flashTimer(new QTimer(this))
+    , m_flashCount(0)
 {
     setFocusPolicy(Qt::NoFocus);
     setCheckable(true);
@@ -547,12 +558,24 @@ OutputPaneToggleButton::OutputPaneToggleButton(int number, const QString &text,
             ));
     if (m_action)
         connect(m_action, SIGNAL(changed()), this, SLOT(updateToolTip()));
+
+    m_flashTimer->setInterval(400);
+    m_flashTimer->setSingleShot(false);
+    connect(m_flashTimer, SIGNAL(timeout()), this, SLOT(flashTimer()));
 }
 
 void OutputPaneToggleButton::updateToolTip()
 {
     Q_ASSERT(m_action);
     setToolTip(m_action->toolTip());
+}
+
+void OutputPaneToggleButton::flashTimer()
+{
+    m_flashCount--;
+    if (m_flashCount == 0)
+        m_flashTimer->stop();
+    update();
 }
 
 QSize OutputPaneToggleButton::sizeHint() const
@@ -582,9 +605,33 @@ void OutputPaneToggleButton::paintEvent(QPaintEvent *event)
     p.setPen(Qt::white);
     p.drawText((20 - numberWidth) / 2, baseLine, m_number);
     if (!isChecked())
-        p.setPen(Qt::black);
+        p.setPen((m_flashCount & 1) == 0 ? Qt::black : Qt::red);
     int leftPart = 22;
     p.drawText(leftPart, baseLine, fm.elidedText(m_text, Qt::ElideRight, width() - leftPart - 1));
+}
+
+void OutputPaneToggleButton::checkStateSet()
+{
+    //Stop flashing when button is checked
+    QToolButton::checkStateSet();
+    m_flashTimer->stop();
+    m_flashCount = 0;
+}
+
+void OutputPaneToggleButton::flash(int count)
+{
+    //Start flashing if button is not checked
+    if (!isChecked()) {
+        if (m_flashCount == 0) {
+            m_flashCount = count * 2 + 1;
+            m_flashTimer->start();
+        } else if ((m_flashCount & 1) == 0) {
+            m_flashCount = count * 2 + 1;
+        } else {
+            m_flashCount = count * 2;
+        }
+        update();
+    }
 }
 
 } // namespace Internal

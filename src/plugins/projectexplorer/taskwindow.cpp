@@ -377,6 +377,9 @@ void TaskWindow::addTask(const Task &task)
 
     emit tasksChanged();
     navigateStateChanged();
+
+    if (task.type == Task::Error)
+        flash();
 }
 
 void TaskWindow::removeTask(const Task &task)

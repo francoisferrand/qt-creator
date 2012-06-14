@@ -67,6 +67,7 @@
 #include <QStackedWidget>
 #include <QMenu>
 #include <QTimer>
+#include <QLabel>
 
 namespace Core {
 namespace Internal {
@@ -260,6 +261,7 @@ void OutputPaneManager::init()
         connect(outPane, SIGNAL(togglePage(bool)), this, SLOT(togglePage(bool)));
         connect(outPane, SIGNAL(navigateStateUpdate()), this, SLOT(updateNavigateState()));
         connect(outPane, SIGNAL(flashButton()), this, SLOT(flashButton()));
+        connect(outPane, SIGNAL(setBadgeNumber(int)), this, SLOT(setBadgeNumber(int)));
 
         QWidget *toolButtonsContainer = new QWidget(m_opToolBarWidgets);
         QHBoxLayout *toolButtonsLayout = new QHBoxLayout;
@@ -444,6 +446,14 @@ void OutputPaneManager::flashButton()
         static_cast<OutputPaneToggleButton *>(m_buttons.value(idx))->flash();
 }
 
+void OutputPaneManager::setBadgeNumber(int number)
+{
+    IOutputPane* pane = qobject_cast<IOutputPane*>(sender());
+    int idx = findIndexForPage(pane);
+    if (pane)
+        static_cast<OutputPaneToggleButton *>(m_buttons.value(idx))->setIconBadgeNumber(number);
+}
+
 // Slot connected to showPage signal of each page
 void OutputPaneManager::showPage(bool focus, bool ensureSizeHint)
 {
@@ -562,6 +572,14 @@ OutputPaneToggleButton::OutputPaneToggleButton(int number, const QString &text,
     m_flashTimer->setInterval(400);
     m_flashTimer->setSingleShot(false);
     connect(m_flashTimer, SIGNAL(timeout()), this, SLOT(flashTimer()));
+
+    m_label = new QLabel(this);
+    fnt.setBold(true);
+    m_label->setFont(fnt);
+    m_label->setAlignment(Qt::AlignCenter);
+    m_label->setStyleSheet("background-color: grey; color: white; border-radius: 6; padding-left: 1; padding-right:1;");
+    m_label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    m_label->hide();
 }
 
 void OutputPaneToggleButton::updateToolTip()
@@ -587,6 +605,11 @@ QSize OutputPaneToggleButton::sizeHint() const
     // Expand to account for border image set by stylesheet above
     s.rwidth() += 19 + 5 + 2;
     s.rheight() += 2 + 2;
+
+    if (!m_label->text().isNull()) {
+        m_label->move(s.width() - 3, (s.height() - m_label->height()) / 2 + 1);
+        s.rwidth() += m_label->width();
+    }
 
     return s.expandedTo(QApplication::globalStrut());
 }
@@ -616,6 +639,11 @@ void OutputPaneToggleButton::checkStateSet()
     QToolButton::checkStateSet();
     m_flashTimer->stop();
     m_flashCount = 0;
+
+    if (isChecked())
+        m_label->setStyleSheet("background-color: lightgrey; color: black; border-radius: 6; padding-left: 1; padding-right:1;");
+    else
+        m_label->setStyleSheet("background-color: grey; color: white; border-radius: 6; padding-left: 1; padding-right:1;");
 }
 
 void OutputPaneToggleButton::flash(int count)
@@ -632,6 +660,26 @@ void OutputPaneToggleButton::flash(int count)
         }
         update();
     }
+}
+
+void OutputPaneToggleButton::setIconBadgeNumber(int number)
+{
+    if (number) {
+        const QString text = QString::number(number);
+        m_label->setText(text);
+
+        QSize size = m_label->sizeHint();
+        if (size.width() < size.height())
+            //Ensure we increase size by an even number of pixels
+            size.setWidth(size.height() + ((size.width() - size.height()) & 1));
+        m_label->resize(size);
+
+        m_label->show();
+    } else {
+        m_label->setText(QString());
+        m_label->hide();
+    }
+    updateGeometry();
 }
 
 } // namespace Internal

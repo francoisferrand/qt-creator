@@ -339,6 +339,8 @@ void TaskWindow::clearTasks(const Core::Id &categoryId)
     emit tasksChanged();
     emit tasksCleared();
     navigateStateChanged();
+
+    setBadgeNumber(0);
 }
 
 void TaskWindow::setCategoryVisibility(const Core::Id &categoryId, bool visible)
@@ -355,6 +357,7 @@ void TaskWindow::setCategoryVisibility(const Core::Id &categoryId, bool visible)
     }
 
     d->m_filter->setFilteredCategories(categories);
+    setBadgeNumber(d->m_filter->rowCount());
 }
 
 void TaskWindow::visibilityChanged(bool /* b */)
@@ -380,6 +383,8 @@ void TaskWindow::addTask(const Task &task)
 
     if (task.type == Task::Error)
         flash();
+
+    setBadgeNumber(d->m_filter->rowCount());
 }
 
 void TaskWindow::removeTask(const Task &task)
@@ -388,6 +393,8 @@ void TaskWindow::removeTask(const Task &task)
 
     emit tasksChanged();
     navigateStateChanged();
+
+    setBadgeNumber(d->m_filter->rowCount());
 }
 
 void TaskWindow::updatedTaskFileName(unsigned int id, const QString &fileName)
@@ -488,6 +495,7 @@ void TaskWindow::setShowWarnings(bool show)
 {
     d->m_filter->setFilterIncludesWarnings(show);
     d->m_filter->setFilterIncludesUnknowns(show); // "Unknowns" are often associated with warnings
+    setBadgeNumber(d->m_filter->rowCount());
 }
 
 void TaskWindow::updateCategoriesMenu()

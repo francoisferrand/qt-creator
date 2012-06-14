@@ -41,6 +41,7 @@ class QAction;
 class QComboBox;
 class QStackedWidget;
 class QSplitter;
+class QLabel;
 QT_END_NAMESPACE
 
 namespace Core {
@@ -84,6 +85,7 @@ private slots:
     void buttonTriggered();
     void updateNavigateState();
     void flashButton();
+    void setBadgeNumber(int number);
 
 private:
     // the only class that is allowed to create and destroy
@@ -134,6 +136,7 @@ public:
     QSize sizeHint() const;
     void paintEvent(QPaintEvent *event);
     void flash(int count = 5);
+    void setIconBadgeNumber(int number);
 
 private slots:
     void updateToolTip();
@@ -147,6 +150,7 @@ private:
     QAction *m_action;
     QTimer *m_flashTimer;
     int     m_flashCount;
+    QLabel *m_label;
 };
 
 } // namespace Internal

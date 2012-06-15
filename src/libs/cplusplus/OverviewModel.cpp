@@ -200,6 +200,12 @@ QVariant OverviewModel::data(const QModelIndex &index, int role) const
                 if (! symbol->type()->isFunctionType())
                     name += QLatin1String(": ");
                 name += type;
+                if (Function *f = symbol->type()->asFunctionType()) {
+                    type = _overview.prettyType(f->returnType());
+                    if (type.isEmpty())
+                        type = QLatin1String("void");
+                    name += QLatin1String(": ") + type;
+                }
             }
         }
         return name;

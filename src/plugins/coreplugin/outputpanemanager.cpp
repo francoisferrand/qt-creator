@@ -68,6 +68,7 @@
 #include <QMenu>
 #include <QTimer>
 #include <QLabel>
+#include <QTimeLine>
 
 namespace Core {
 namespace Internal {
@@ -548,8 +549,7 @@ OutputPaneToggleButton::OutputPaneToggleButton(int number, const QString &text,
     , m_number(QString::number(number))
     , m_text(text)
     , m_action(action)
-    , m_flashTimer(new QTimer(this))
-    , m_flashCount(0)
+    , m_flashTimer(new QTimeLine(1000, this))
 {
     setFocusPolicy(Qt::NoFocus);
     setCheckable(true);
@@ -569,9 +569,11 @@ OutputPaneToggleButton::OutputPaneToggleButton(int number, const QString &text,
     if (m_action)
         connect(m_action, SIGNAL(changed()), this, SLOT(updateToolTip()));
 
-    m_flashTimer->setInterval(400);
-    m_flashTimer->setSingleShot(false);
-    connect(m_flashTimer, SIGNAL(timeout()), this, SLOT(flashTimer()));
+    m_flashTimer->setDirection(QTimeLine::Forward);
+    m_flashTimer->setCurveShape(QTimeLine::SineCurve);
+    m_flashTimer->setFrameRange(0, 92);
+    connect(m_flashTimer, SIGNAL(valueChanged(qreal)), this, SLOT(update()));
+    connect(m_flashTimer, SIGNAL(finished()), this, SLOT(update()));
 
     m_label = new QLabel(this);
     fnt.setBold(true);
@@ -586,14 +588,6 @@ void OutputPaneToggleButton::updateToolTip()
 {
     Q_ASSERT(m_action);
     setToolTip(m_action->toolTip());
-}
-
-void OutputPaneToggleButton::flashTimer()
-{
-    m_flashCount--;
-    if (m_flashCount == 0)
-        m_flashTimer->stop();
-    update();
 }
 
 QSize OutputPaneToggleButton::sizeHint() const
@@ -624,11 +618,15 @@ void OutputPaneToggleButton::paintEvent(QPaintEvent *event)
     const int numberWidth = fm.width(m_number);
 
     QPainter p(this);
+    if (m_flashTimer->state() == QTimeLine::Running) {
+        p.setPen(Qt::transparent);
+        p.fillRect(rect().adjusted(19, 1, -1, -1), QBrush(QColor(255,0,0, m_flashTimer->currentFrame())));
+    }
     p.setFont(font());
     p.setPen(Qt::white);
     p.drawText((20 - numberWidth) / 2, baseLine, m_number);
     if (!isChecked())
-        p.setPen((m_flashCount & 1) == 0 ? Qt::black : Qt::red);
+        p.setPen(Qt::black);
     int leftPart = 22;
     p.drawText(leftPart, baseLine, fm.elidedText(m_text, Qt::ElideRight, width() - leftPart - 1));
 }
@@ -638,7 +636,6 @@ void OutputPaneToggleButton::checkStateSet()
     //Stop flashing when button is checked
     QToolButton::checkStateSet();
     m_flashTimer->stop();
-    m_flashCount = 0;
 
     if (isChecked())
         m_label->setStyleSheet("background-color: lightgrey; color: black; border-radius: 6; padding-left: 1; padding-right:1;");
@@ -650,14 +647,9 @@ void OutputPaneToggleButton::flash(int count)
 {
     //Start flashing if button is not checked
     if (!isChecked()) {
-        if (m_flashCount == 0) {
-            m_flashCount = count * 2 + 1;
+        m_flashTimer->setLoopCount(count);
+        if (m_flashTimer->state() != QTimeLine::Running)
             m_flashTimer->start();
-        } else if ((m_flashCount & 1) == 0) {
-            m_flashCount = count * 2 + 1;
-        } else {
-            m_flashCount = count * 2;
-        }
         update();
     }
 }

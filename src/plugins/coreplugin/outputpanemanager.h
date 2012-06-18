@@ -42,6 +42,7 @@ class QComboBox;
 class QStackedWidget;
 class QSplitter;
 class QLabel;
+class QTimeLine;
 QT_END_NAMESPACE
 
 namespace Core {
@@ -135,12 +136,11 @@ public:
                            QWidget *parent = 0);
     QSize sizeHint() const;
     void paintEvent(QPaintEvent *event);
-    void flash(int count = 5);
+    void flash(int count = 3);
     void setIconBadgeNumber(int number);
 
 private slots:
     void updateToolTip();
-    void flashTimer();
 
 private:
     virtual void checkStateSet();
@@ -148,8 +148,7 @@ private:
     QString m_number;
     QString m_text;
     QAction *m_action;
-    QTimer *m_flashTimer;
-    int     m_flashCount;
+    QTimeLine *m_flashTimer;
     QLabel *m_label;
 };
 

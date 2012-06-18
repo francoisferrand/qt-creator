@@ -220,6 +220,7 @@ public:
     QToolButton *m_categoriesButton;
     QMenu *m_categoriesMenu;
     TaskHub *m_taskHub;
+    int m_badgeCount;
 };
 
 static QToolButton *createFilterButton(QIcon icon, const QString &toolTip,
@@ -256,6 +257,7 @@ TaskWindow::TaskWindow(TaskHub *taskhub) : d(new TaskWindowPrivate)
 
     d->m_taskWindowContext = new Internal::TaskWindowContext(d->m_listview);
     d->m_taskHub = taskhub;
+    d->m_badgeCount = 0;
 
     Core::ICore::addContextObject(d->m_taskWindowContext);
 
@@ -334,13 +336,22 @@ QWidget *TaskWindow::outputWidget(QWidget *)
 
 void TaskWindow::clearTasks(const Core::Id &categoryId)
 {
+    if (categoryId.uniqueIdentifier() != 0 && !d->m_filter->filteredCategories().contains(categoryId)) {
+        if (d->m_filter->filterIncludesErrors())
+            d->m_badgeCount -= d->m_model->errorTaskCount(categoryId);
+        if (d->m_filter->filterIncludesWarnings())
+            d->m_badgeCount -= d->m_model->warningTaskCount(categoryId);
+    } else {
+        d->m_badgeCount = 0;
+    }
+
     d->m_model->clearTasks(categoryId);
 
     emit tasksChanged();
     emit tasksCleared();
     navigateStateChanged();
 
-    setBadgeNumber(0);
+    setBadgeNumber(d->m_badgeCount);
 }
 
 void TaskWindow::setCategoryVisibility(const Core::Id &categoryId, bool visible)
@@ -357,7 +368,17 @@ void TaskWindow::setCategoryVisibility(const Core::Id &categoryId, bool visible)
     }
 
     d->m_filter->setFilteredCategories(categories);
-    setBadgeNumber(d->m_filter->rowCount());
+
+    int count = 0;
+    if (d->m_filter->filterIncludesErrors())
+        count += d->m_model->errorTaskCount(categoryId);
+    if (d->m_filter->filterIncludesWarnings())
+        count += d->m_model->warningTaskCount(categoryId);
+    if (visible)
+        d->m_badgeCount += count;
+    else
+        d->m_badgeCount -= count;
+    setBadgeNumber(d->m_badgeCount);
 }
 
 void TaskWindow::visibilityChanged(bool /* b */)
@@ -384,7 +405,14 @@ void TaskWindow::addTask(const Task &task)
     if (task.type == Task::Error)
         flash();
 
-    setBadgeNumber(d->m_filter->rowCount());
+    if (task.type == Task::Error && d->m_filter->filterIncludesErrors() &&
+        !d->m_filter->filteredCategories().contains(task.category)) {
+        setBadgeNumber(++d->m_badgeCount);
+    }
+    if (task.type == Task::Warning && d->m_filter->filterIncludesWarnings() &&
+        !d->m_filter->filteredCategories().contains(task.category)) {
+        setBadgeNumber(++d->m_badgeCount);
+    }
 }
 
 void TaskWindow::removeTask(const Task &task)
@@ -394,7 +422,14 @@ void TaskWindow::removeTask(const Task &task)
     emit tasksChanged();
     navigateStateChanged();
 
-    setBadgeNumber(d->m_filter->rowCount());
+    if (task.type == Task::Error && d->m_filter->filterIncludesErrors() &&
+        !d->m_filter->filteredCategories().contains(task.category)) {
+        setBadgeNumber(--d->m_badgeCount);
+    }
+    if (task.type == Task::Warning && d->m_filter->filterIncludesWarnings() &&
+        !d->m_filter->filteredCategories().contains(task.category)) {
+        setBadgeNumber(--d->m_badgeCount);
+    }
 }
 
 void TaskWindow::updatedTaskFileName(unsigned int id, const QString &fileName)

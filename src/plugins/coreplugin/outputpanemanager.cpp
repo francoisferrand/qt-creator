@@ -286,8 +286,8 @@ void OutputPaneManager::init()
 
         if (outPane->priorityInStatusBar() != -1) {
             cmd->setDefaultKeySequence(QKeySequence(paneShortCut(shortcutNumber)));
-            QToolButton *button = new OutputPaneToggleButton(shortcutNumber, outPane->displayName(),
-                                                             cmd->action());
+            OutputPaneToggleButton *button = new OutputPaneToggleButton(shortcutNumber, outPane->displayName(),
+                                                                        cmd->action());
             ++shortcutNumber;
             m_buttonsWidget->layout()->addWidget(button);
             connect(button, SIGNAL(clicked()), this, SLOT(buttonTriggered()));
@@ -346,8 +346,8 @@ void OutputPaneManager::slotMinMax()
 
 void OutputPaneManager::buttonTriggered()
 {
-    QToolButton *button = qobject_cast<QToolButton *>(sender());
-    QMap<int, QToolButton *>::const_iterator it, end;
+    OutputPaneToggleButton *button = qobject_cast<OutputPaneToggleButton *>(sender());
+    QMap<int, OutputPaneToggleButton *>::const_iterator it, end;
     end = m_buttons.constEnd();
     for (it = m_buttons.begin(); it != end; ++it) {
         if (it.value() == button)
@@ -444,7 +444,7 @@ void OutputPaneManager::flashButton()
     IOutputPane* pane = qobject_cast<IOutputPane*>(sender());
     int idx = findIndexForPage(pane);
     if (pane)
-        static_cast<OutputPaneToggleButton *>(m_buttons.value(idx))->flash();
+        m_buttons.value(idx)->flash();
 }
 
 void OutputPaneManager::setBadgeNumber(int number)
@@ -452,7 +452,7 @@ void OutputPaneManager::setBadgeNumber(int number)
     IOutputPane* pane = qobject_cast<IOutputPane*>(sender());
     int idx = findIndexForPage(pane);
     if (pane)
-        static_cast<OutputPaneToggleButton *>(m_buttons.value(idx))->setIconBadgeNumber(number);
+        m_buttons.value(idx)->setIconBadgeNumber(number);
 }
 
 // Slot connected to showPage signal of each page

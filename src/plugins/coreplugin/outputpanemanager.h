@@ -51,6 +51,7 @@ class IOutputPane;
 
 namespace Internal {
 class OutputPaneManager;
+class OutputPaneToggleButton;
 class MainWindow;
 }
 
@@ -121,7 +122,7 @@ private:
     QStackedWidget *m_outputWidgetPane;
     QStackedWidget *m_opToolBarWidgets;
     QWidget *m_buttonsWidget;
-    QMap<int, QToolButton *> m_buttons;
+    QMap<int, OutputPaneToggleButton *> m_buttons;
     QMap<QAction *, int> m_actions;
     QPixmap m_minimizeIcon;
     QPixmap m_maximizeIcon;
@@ -143,7 +144,7 @@ private slots:
     void updateToolTip();
 
 private:
-    virtual void checkStateSet();
+    void checkStateSet();
 
     QString m_number;
     QString m_text;

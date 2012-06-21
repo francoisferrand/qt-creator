@@ -74,7 +74,35 @@ struct ContentLessThan
 
     bool lessThan(const QString &a, const QString &b)
     {
-        return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(), CharLessThan());
+        QString::const_iterator pa = a.begin();
+        QString::const_iterator pb = b.begin();
+
+        enum { Letter, SmallerNumber, BiggerNumber } state = Letter;
+        for (; pa != a.end() && pb != b.end(); ++pa, ++pb) {
+            if (state != Letter) {
+                if (!pa->isDigit() || !pb->isDigit())
+                    break;
+            } else if (pa->isDigit() && pb->isDigit()) {
+                if (CharLessThan()(*pa, *pb))
+                    state = SmallerNumber;
+                else if (CharLessThan()(*pb, *pa))
+                    state = BiggerNumber;
+            } else {
+                if (CharLessThan()(*pa, *pb))
+                    return true;
+                if (CharLessThan()(*pb, *pa))
+                    return false;
+            }
+        }
+
+        if (state == Letter)
+            return pa == a.end() && pb != b.end();
+        else if (pa != a.end() && pa->isDigit())
+            return false;                   //more digits
+        else if (pb != b.end() && pb->isDigit())
+            return true;                    //fewer digits
+        else
+            return state == SmallerNumber;  //same length, compare first different digit in the sequence
     }
 
     struct CharLessThan

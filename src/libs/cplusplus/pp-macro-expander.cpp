@@ -259,7 +259,7 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                     lastpaste = __first = skip_blanks(++next, __last);
             }
 
-            const QByteArray fast_name(name_begin, name_end - name_begin);
+            QByteArray fast_name(name_begin, name_end - name_begin);
             const QByteArray *actual = resolve_formal (fast_name);
             if (actual)
             {
@@ -281,12 +281,24 @@ const char *MacroExpander::expand(const char *__first, const char *__last,
                         else if (*begin!=EndArgumentMarker)
                             __result->append(*begin);
                     }
+                    if (need_comma)
+                        __result->append(',');
+                    continue;
                 }
-                else
-                    __result->append(begin, end-begin);
-                if (need_comma)
-                    __result->append(',');
-                continue;
+                else {
+                    const char *__begin_id = begin;
+                    for (const char *p = end - 1; p != begin - 1; --p)
+                        if (!pp_isalnum(*p) && *p != '_') {
+                            __begin_id = p + 1;
+                            break;
+                        }
+                    if (__begin_id != begin)
+                        __result->append(begin, __begin_id - begin);
+                    if (__begin_id != end)
+                        fast_name = QByteArray(__begin_id, end - __begin_id); //fall through with macro expansion
+                    else
+                        continue;
+                }
             }
 
             Macro *macro = env->resolve (fast_name);

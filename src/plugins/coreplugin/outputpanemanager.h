@@ -136,6 +136,7 @@ public:
     OutputPaneToggleButton(int number, const QString &text, QAction *action,
                            QWidget *parent = 0);
     QSize sizeHint() const;
+    void resizeEvent(QResizeEvent *event);
     void paintEvent(QPaintEvent *event);
     void flash(int count = 3);
     void setIconBadgeNumber(int number);

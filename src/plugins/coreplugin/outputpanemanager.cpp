@@ -601,12 +601,19 @@ QSize OutputPaneToggleButton::sizeHint() const
     s.rwidth() += 19 + 5 + 2;
     s.rheight() += 2 + 2;
 
-    if (!m_label->text().isNull()) {
-        m_label->move(s.width() - 3, (s.height() - m_label->height()) / 2 + 1);
+    if (!m_label->text().isNull())
         s.rwidth() += m_label->width();
-    }
 
     return s.expandedTo(QApplication::globalStrut());
+}
+
+void OutputPaneToggleButton::resizeEvent(QResizeEvent *event)
+{
+    QToolButton::resizeEvent(event);
+    if (!m_label->text().isNull()) {
+        m_label->move(width() - m_label->width() - 3,  (height() - m_label->height() + 1) / 2);
+        m_label->show();
+    }
 }
 
 void OutputPaneToggleButton::paintEvent(QPaintEvent *event)
@@ -629,7 +636,8 @@ void OutputPaneToggleButton::paintEvent(QPaintEvent *event)
     if (!isChecked())
         p.setPen(Qt::black);
     int leftPart = 22;
-    p.drawText(leftPart, baseLine, fm.elidedText(m_text, Qt::ElideRight, width() - leftPart - 1));
+    int labelWidth = m_label->isVisible() ? m_label->width() + 3 : 0;
+    p.drawText(leftPart, baseLine, fm.elidedText(m_text, Qt::ElideRight, width() - leftPart - 1 - labelWidth));
 }
 
 void OutputPaneToggleButton::checkStateSet()
@@ -667,7 +675,7 @@ void OutputPaneToggleButton::setIconBadgeNumber(int number)
             size.setWidth(size.height() + ((size.width() - size.height()) & 1));
         m_label->resize(size);
 
-        m_label->show();
+        //Do not show yet, we wait until the button has been resized
     } else {
         m_label->setText(QString());
         m_label->hide();

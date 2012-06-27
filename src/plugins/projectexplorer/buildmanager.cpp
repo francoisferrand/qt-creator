@@ -159,6 +159,9 @@ BuildManager::BuildManager(ProjectExplorerPlugin *parent)
             this, SLOT(cancel()));
     connect(&d->m_progressWatcher, SIGNAL(finished()),
             this, SLOT(finish()));
+
+    connect(this, SIGNAL(buildQueueFinished(bool)),
+            d->m_outputWindow, SLOT(flash()));
 }
 
 void BuildManager::extensionsInitialized()
@@ -289,7 +292,6 @@ void BuildManager::clearBuildQueue()
     d->m_maxProgress = 0;
 
     emit buildQueueFinished(false);
-    d->m_outputWindow->flash();
 }
 
 
@@ -320,7 +322,6 @@ void BuildManager::startBuildQueue(const QStringList &preambleMessage)
 {
     if (d->m_buildQueue.isEmpty()) {
         emit buildQueueFinished(true);
-        d->m_outputWindow->flash();
         return;
     }
     if (!d->m_running) {
@@ -490,7 +491,6 @@ void BuildManager::nextStep()
         d->m_progressFutureInterface = 0;
         d->m_maxProgress = 0;
         emit buildQueueFinished(true);
-        d->m_outputWindow->flash();
     }
 }
 

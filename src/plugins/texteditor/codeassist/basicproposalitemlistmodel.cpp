@@ -77,32 +77,31 @@ struct ContentLessThan
         QString::const_iterator pa = a.begin();
         QString::const_iterator pb = b.begin();
 
+        CharLessThan charLessThan;
         enum { Letter, SmallerNumber, BiggerNumber } state = Letter;
         for (; pa != a.end() && pb != b.end(); ++pa, ++pb) {
+            if (*pa == *pb)
+                continue;
             if (state != Letter) {
                 if (!pa->isDigit() || !pb->isDigit())
                     break;
             } else if (pa->isDigit() && pb->isDigit()) {
-                if (CharLessThan()(*pa, *pb))
+                if (charLessThan(*pa, *pb))
                     state = SmallerNumber;
-                else if (CharLessThan()(*pb, *pa))
+                else
                     state = BiggerNumber;
             } else {
-                if (CharLessThan()(*pa, *pb))
-                    return true;
-                if (CharLessThan()(*pb, *pa))
-                    return false;
+                return charLessThan(*pa, *pb);
             }
         }
 
         if (state == Letter)
             return pa == a.end() && pb != b.end();
-        else if (pa != a.end() && pa->isDigit())
+        if (pa != a.end() && pa->isDigit())
             return false;                   //more digits
-        else if (pb != b.end() && pb->isDigit())
+        if (pb != b.end() && pb->isDigit())
             return true;                    //fewer digits
-        else
-            return state == SmallerNumber;  //same length, compare first different digit in the sequence
+        return state == SmallerNumber;      //same length, compare first different digit in the sequence
     }
 
     struct CharLessThan

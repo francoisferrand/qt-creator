@@ -196,17 +196,12 @@ QVariant OverviewModel::data(const QModelIndex &index, int role) const
                 name = QLatin1Char('-') + name;
         } else if (! symbol->isScope() || symbol->isFunction()) {
             QString type = _overview.prettyType(symbol->type());
-            if (! type.isEmpty()) {
-                if (! symbol->type()->isFunctionType())
-                    name += QLatin1String(": ");
+            if (Function *f = symbol->type()->asFunctionType()) {
                 name += type;
-                if (Function *f = symbol->type()->asFunctionType()) {
-                    type = _overview.prettyType(f->returnType());
-                    if (type.isEmpty())
-                        type = QLatin1String("void");
-                    name += QLatin1String(": ") + type;
-                }
+                type = _overview.prettyType(f->returnType());
             }
+            if (! type.isEmpty())
+                name += QLatin1String(": ") + type;
         }
         return name;
     }

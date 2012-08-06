@@ -82,7 +82,8 @@ QModelIndex OverviewModel::index(int row, int column, const QModelIndex &parent)
         Q_ASSERT(parentSymbol);
 
         if (Template *t = parentSymbol->asTemplate())
-            parentSymbol = t->declaration();
+            if (Symbol *templateParentSymbol = t->declaration())
+                parentSymbol = templateParentSymbol;
 
         Scope *scope = parentSymbol->asScope();
         Q_ASSERT(scope != 0);
@@ -124,7 +125,8 @@ int OverviewModel::rowCount(const QModelIndex &parent) const
             Q_ASSERT(parentSymbol);
 
             if (Template *t = parentSymbol->asTemplate())
-                parentSymbol = t->declaration();
+                if (Symbol *templateParentSymbol = t->declaration())
+                    parentSymbol = templateParentSymbol;
 
             if (Scope *parentScope = parentSymbol->asScope()) {
                 if (!parentScope->isFunction() && !parentScope->isObjCMethod()) {
@@ -181,13 +183,14 @@ QVariant OverviewModel::data(const QModelIndex &index, int role) const
         }
         if (symbol->isObjCPropertyDeclaration())
             name = QLatin1String("@property ") + name;
-        if (Template *t = symbol->asTemplate()) {
-            QStringList parameters;
-            for (unsigned i = 0; i < t->templateParameterCount(); ++i)
-                parameters.append(_overview.prettyName(t->templateParameterAt(i)->name()));
-            name += QLatin1Char('<') + parameters.join(QLatin1String(", ")) + QLatin1Char('>');
-            symbol = t->declaration();
-        }
+        if (Template *t = symbol->asTemplate())
+            if (Symbol *templateDeclaration = t->declaration()) {
+                QStringList parameters;
+                for (unsigned i = 0; i < t->templateParameterCount(); ++i)
+                    parameters.append(_overview.prettyName(t->templateParameterAt(i)->name()));
+                name += QLatin1Char('<') + parameters.join(QLatin1String(", ")) + QLatin1Char('>');
+                symbol = templateDeclaration;
+            }
         if (symbol->isObjCMethod()) {
             ObjCMethod *method = symbol->asObjCMethod();
             if (method->isStatic())

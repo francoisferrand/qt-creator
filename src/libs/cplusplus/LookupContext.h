@@ -91,7 +91,7 @@ public:
 
     ClassOrNamespace *parent() const;
     QList<ClassOrNamespace *> usings() const;
-    QList<Enum *> enums() const;
+    QList<Enum *> unscopedEnums() const;
     QList<Symbol *> symbols() const;
 
     ClassOrNamespace *globalNamespace() const;
@@ -111,7 +111,7 @@ private:
 
     void addTodo(Symbol *symbol);
     void addSymbol(Symbol *symbol);
-    void addEnum(Enum *e);
+    void addUnscopedEnum(Enum *e);
     void addUsing(ClassOrNamespace *u);
     void addNestedType(const Name *alias, ClassOrNamespace *e);
 

@@ -755,6 +755,7 @@ ClassOrNamespace *ClassOrNamespace::nestedType(const Name *name, ClassOrNamespac
 #endif // DEBUG_LOOKUP
         instantiation->_templateId = templId;
         instantiation->_instantiationOrigin = origin;
+        instantiation->_classOrNamespaces = reference->_classOrNamespaces;
 
         // The instantiation should have all symbols, enums, and usings from the reference.
         instantiation->_enums.append(reference->enums());

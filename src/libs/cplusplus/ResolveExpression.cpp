@@ -878,6 +878,7 @@ ClassOrNamespace *ResolveExpression::baseExpression(const QList<LookupItem> &bas
 
     foreach (const LookupItem &r, baseResults) {
         FullySpecifiedType ty = r.type().simplified();
+        FullySpecifiedType originalType = ty;
         Scope *scope = r.scope();
 
 #ifdef DEBUG_LOOKUP
@@ -892,8 +893,11 @@ ClassOrNamespace *ResolveExpression::baseExpression(const QList<LookupItem> &bas
 #endif // DEBUG_LOOKUP
 
         if (accessOp == T_ARROW) {
-            if (PointerType *ptrTy = ty->asPointerType()) {
-                if (ClassOrNamespace *binding = findClass(ptrTy->elementType(), scope))
+            if (PointerType *ptrTy = originalType->asPointerType()) {
+                FullySpecifiedType type = ptrTy->elementType();
+                if (! ty->isPointerType())
+                    type = ty;
+                if (ClassOrNamespace *binding = findClass(type, scope))
                     return binding;
 
             } else if (ClassOrNamespace *binding = findClass(ty, scope)) {

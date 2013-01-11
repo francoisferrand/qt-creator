@@ -111,7 +111,7 @@ namespace {
         virtual bool visit(NumericLiteralAST * ast)
         {
             bool ok;
-            _result = QString(tokenAt(ast->literal_token).spell()).toInt(&ok, 0);
+            _result = QString::fromAscii(tokenAt(ast->literal_token).spell()).toInt(&ok, 0);
             if (!ok)
                 _error = true;
             return false;
@@ -589,19 +589,19 @@ CppEnumerator::CppEnumerator(CPlusPlus::EnumeratorDeclaration *declaration)
         }
 
         if (!basevalue)
-            enumeratorValue = QString("%1").arg(offset);
+            enumeratorValue = QString::number(offset);
         else if (offset == 0)
             enumeratorValue = QString::fromUtf8(basevalue->chars(), basevalue->size());
         else
-            enumeratorValue = QString::fromUtf8(basevalue->chars(), basevalue->size()) + QString(" + %1").arg(offset);
+            enumeratorValue = QString::fromUtf8(basevalue->chars(), basevalue->size()) + QLatin1String(" + ") + QString::number(offset);
     } else if (const StringLiteral *value = declaration->constantValue()) {
         enumeratorValue = QString::fromUtf8(value->chars(), value->size());
     }
 
     int value;
     if (ConstantExpressionEvaluator::eval(&value, enumeratorValue)) {
-        if (enumeratorValue.contains("0x", Qt::CaseInsensitive))
-            enumeratorValue = QString("0x") + QString::number(value, 16);
+        if (enumeratorValue.contains(QLatin1String("0x"), Qt::CaseInsensitive))
+            enumeratorValue = QLatin1String("0x") + QString::number(value, 16);
         else
             enumeratorValue = QString::number(value);
     }

@@ -1315,6 +1315,13 @@ bool Preprocessor::collectActualArguments(PPToken *tk, QVector<QVector<PPToken> 
 
     lex(tk); // consume the identifier
 
+    // consume comments
+    while (tk->isComment()) {
+        lex(tk);
+        if (!tk)
+            return false;
+    }
+
     if (tk->isNot(T_LPAREN))
         //### TODO: error message
         return false;

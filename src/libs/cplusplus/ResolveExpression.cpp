@@ -877,6 +877,8 @@ ClassOrNamespace *ResolveExpression::baseExpression(const QList<LookupItem> &bas
 #endif // DEBUG_LOOKUP
 
     foreach (const LookupItem &r, baseResults) {
+        if (!r.type().type())
+            continue;
         FullySpecifiedType ty = r.type().simplified();
         FullySpecifiedType originalType = ty;
         Scope *scope = r.scope();

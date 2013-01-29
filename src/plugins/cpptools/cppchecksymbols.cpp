@@ -1157,6 +1157,7 @@ bool CheckSymbols::maybeAddTypeOrStatic(const QList<LookupItem> &candidates, Nam
         else if (c->isUsingNamespaceDirective()) // ... and using namespace directives.
             continue;
         else if (c->isTypedef() || c->isNamespace() ||
+                 c->isStatic() || //consider also static variable
                  c->isClass() || c->isEnum() || isTemplateClass(c) ||
                  c->isForwardClassDeclaration() || c->isTypenameArgument() || c->enclosingEnum() != 0) {
 
@@ -1167,6 +1168,9 @@ bool CheckSymbols::maybeAddTypeOrStatic(const QList<LookupItem> &candidates, Nam
             UseKind kind = SemanticInfo::TypeUse;
             if (c->enclosingEnum() != 0)
                 kind = SemanticInfo::EnumerationUse;
+            else if (c->isStatic())
+                // treat static variable as a field(highlighting)
+                kind = SemanticInfo::FieldUse;
 
             const Use use(line, column, length, kind);
             addUse(use);

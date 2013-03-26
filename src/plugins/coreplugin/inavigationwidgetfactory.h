@@ -43,6 +43,8 @@ QT_END_NAMESPACE
 
 namespace Core {
 
+class IEditor;
+
 struct NavigationView
 {
     QWidget *widget;
@@ -71,6 +73,10 @@ public:
     // a certain type of widget could exist multiple times.)
     virtual void saveSettings(int position, QWidget *widget);
     virtual void restoreSettings(int position, QWidget *widget);
+
+    // Sync with editor
+    virtual void sync(IEditor *editor, QWidget *widget);
+    virtual bool canSync(IEditor *) const;
 };
 
 } // namespace Core

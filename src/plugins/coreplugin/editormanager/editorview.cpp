@@ -89,6 +89,7 @@ EditorView::EditorView(QWidget *parent) :
         connect(m_toolBar, SIGNAL(horizontalSplitClicked()), this, SLOT(splitHorizontally()));
         connect(m_toolBar, SIGNAL(verticalSplitClicked()), this, SLOT(splitVertically()));
         connect(m_toolBar, SIGNAL(closeSplitClicked()), this, SLOT(closeSplit()));
+        connect(m_toolBar, SIGNAL(locateInSidebarClicked()), this, SLOT(locateInSidebar()));
         tl->addWidget(m_toolBar);
     }
 
@@ -249,6 +250,12 @@ void EditorView::closeSplit()
     EditorManager *editorManager = EditorManager::instance();
     editorManager->closeView(this);
     editorManager->updateActions();
+}
+
+void EditorView::locateInSidebar()
+{
+    EditorManager *editorManager = EditorManager::instance();
+    editorManager->locateInSidebar();
 }
 
 void EditorView::setCurrentEditor(IEditor *editor)

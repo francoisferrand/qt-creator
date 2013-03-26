@@ -76,6 +76,7 @@ public:
     // IOutlineWidget
     virtual QList<QAction*> filterMenuActions() const;
     virtual void setCursorSynchronization(bool syncWithCursor);
+    virtual void syncWithCursor(Core::IEditor *editor);
     virtual void restoreSettings(int position);
     virtual void saveSettings(int position);
 

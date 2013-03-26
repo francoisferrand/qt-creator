@@ -134,6 +134,16 @@ void CppOutlineWidget::setCursorSynchronization(bool syncWithCursor)
         updateSelectionInTree(m_editor->outlineModelIndex());
 }
 
+void CppOutlineWidget::syncWithCursor(Core::IEditor *editor)
+{
+    if (CPPEditorWidget * cppEditor = qobject_cast<CPPEditorWidget *>(editor->widget())) {
+        bool syncWithCursor = m_enableCursorSync;
+        m_enableCursorSync = true;
+        updateSelectionInTree(cppEditor->outlineModelIndex());
+        m_enableCursorSync = syncWithCursor;
+    }
+}
+
 void CppOutlineWidget::modelUpdated()
 {
     m_treeView->expandAll();

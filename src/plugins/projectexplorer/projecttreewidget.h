@@ -63,6 +63,7 @@ public:
 
 public slots:
     void toggleAutoSynchronization();
+    void sync(Core::IEditor *editor);
     void editCurrentItem();
     void collapseAll();
 
@@ -115,6 +116,8 @@ public:
     Core::NavigationView createWidget();
     void restoreSettings(int position, QWidget *widget);
     void saveSettings(int position, QWidget *widget);
+    void sync(Core::IEditor *editor, QWidget *widget);
+    bool canSync(Core::IEditor *editor);
 };
 
 } // namespace Internal

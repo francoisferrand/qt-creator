@@ -108,6 +108,7 @@ const char SPLIT_SIDE_BY_SIDE[]    = "QtCreator.SplitSideBySide";
 const char REMOVE_CURRENT_SPLIT[]  = "QtCreator.RemoveCurrentSplit";
 const char REMOVE_ALL_SPLITS[]     = "QtCreator.RemoveAllSplits";
 const char GOTO_OTHER_SPLIT[]      = "QtCreator.GotoOtherSplit";
+const char LOCATE_IN_SIDEBAR[]     = "QtCreator.LocateInSidebar";
 const char CLOSE[]                 = "QtCreator.Close";
 #ifdef Q_OS_WIN
 const char CLOSE_ALTERNATIVE[]     = "QtCreator.Close_Alternative"; // temporary, see QTCREATORBUG-72

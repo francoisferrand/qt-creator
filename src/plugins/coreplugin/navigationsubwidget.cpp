@@ -180,6 +180,20 @@ Core::Command *NavigationSubWidget::command(const QString &title) const
     return 0;
 }
 
+void NavigationSubWidget::sync(IEditor *editor)
+{
+    if (!m_navigationWidget || !factory())
+        return;
+    factory()->sync(editor, m_navigationWidget);
+}
+
+bool NavigationSubWidget::canSync(IEditor *editor)
+{
+    if (!m_navigationWidget || !factory())
+        return false;
+    return factory()->canSync(editor);
+}
+
 int NavigationSubWidget::factoryIndex() const
 {
     return m_navigationComboBox->currentIndex();

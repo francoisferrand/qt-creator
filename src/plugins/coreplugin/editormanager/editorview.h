@@ -101,6 +101,7 @@ private slots:
     void splitHorizontally();
     void splitVertically();
     void closeSplit();
+    void locateInSidebar();
 
 private:
     void updateNavigatorActions();

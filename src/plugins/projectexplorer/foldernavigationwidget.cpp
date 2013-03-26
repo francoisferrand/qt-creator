@@ -206,6 +206,12 @@ void FolderNavigationWidget::setAutoSynchronization(bool sync)
     }
 }
 
+void FolderNavigationWidget::sync(Core::IEditor *editor)
+{
+    if (Core::IDocument *doc = editor->document())
+        setCurrentFile(doc->fileName());
+}
+
 void FolderNavigationWidget::setCurrentFile(const QString &filePath)
 {
     // Try to find directory of current file
@@ -471,6 +477,18 @@ void FolderNavigationWidgetFactory::restoreSettings(int position, QWidget *widge
     const QString baseKey = QLatin1String("FolderNavigationWidget.") + QString::number(position);
     fnw->setHiddenFilesFilter(settings->value(baseKey + QLatin1String(".HiddenFilesFilter"), false).toBool());
     fnw->setAutoSynchronization(settings->value(baseKey +  QLatin1String(".SyncWithEditor"), true).toBool());
+}
+
+void FolderNavigationWidgetFactory::sync(Core::IEditor *editor, QWidget *widget)
+{
+    FolderNavigationWidget *fnw = qobject_cast<FolderNavigationWidget *>(widget);
+    Q_ASSERT(fnw);
+    fnw->sync(editor);
+}
+
+bool FolderNavigationWidgetFactory::canSync(Core::IEditor * /*editor*/)
+{
+    return true;
 }
 } // namespace Internal
 } // namespace ProjectExplorer

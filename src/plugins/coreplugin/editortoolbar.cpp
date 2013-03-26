@@ -76,6 +76,7 @@ struct EditorToolBarPrivate {
     Core::OpenEditorsModel *m_editorsListModel;
     QComboBox *m_editorList;
     QToolButton *m_closeEditorButton;
+    QToolButton *m_locateInSidebarButton;
     QToolButton *m_lockButton;
     QAction *m_goBackAction;
     QAction *m_goForwardAction;
@@ -96,6 +97,7 @@ struct EditorToolBarPrivate {
 EditorToolBarPrivate::EditorToolBarPrivate(QWidget *parent, EditorToolBar *q) :
     m_editorList(new QComboBox(q)),
     m_closeEditorButton(new QToolButton),
+    m_locateInSidebarButton(new QToolButton),
     m_lockButton(new QToolButton),
     m_goBackAction(new QAction(QIcon(QLatin1String(Constants::ICON_PREV)), EditorManager::tr("Go Back"), parent)),
     m_goForwardAction(new QAction(QIcon(QLatin1String(Constants::ICON_NEXT)), EditorManager::tr("Go Forward"), parent)),
@@ -145,6 +147,10 @@ EditorToolBar::EditorToolBar(QWidget *parent) :
     d->m_closeEditorButton->setIcon(QIcon(QLatin1String(Constants::ICON_CLOSE_DOCUMENT)));
     d->m_closeEditorButton->setEnabled(false);
 
+    d->m_locateInSidebarButton->setAutoRaise(true);
+    d->m_locateInSidebarButton->setIcon(QIcon(QLatin1String(Constants::ICON_LINK)));
+    d->m_locateInSidebarButton->setEnabled(false);
+
     d->m_toolBarPlaceholder->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
     d->m_backButton = new QToolButton(this);
@@ -180,6 +186,7 @@ EditorToolBar::EditorToolBar(QWidget *parent) :
     toplayout->addWidget(d->m_toolBarPlaceholder, 1); // Custom toolbar stretches
     toplayout->addWidget(d->m_splitButton);
     toplayout->addWidget(d->m_closeSplitButton);
+    toplayout->addWidget(d->m_locateInSidebarButton);
     toplayout->addWidget(d->m_closeEditorButton);
 
     setLayout(toplayout);
@@ -197,9 +204,12 @@ EditorToolBar::EditorToolBar(QWidget *parent) :
             this, SIGNAL(verticalSplitClicked()), Qt::QueuedConnection);
     connect(d->m_closeSplitButton, SIGNAL(clicked()),
             this, SIGNAL(closeSplitClicked()), Qt::QueuedConnection);
-
+    connect(d->m_locateInSidebarButton, SIGNAL(clicked()),
+            this, SIGNAL(locateInSidebarClicked()), Qt::QueuedConnection);
 
     connect(ActionManager::command(Constants::CLOSE), SIGNAL(keySequenceChanged()),
+            this, SLOT(updateActionShortcuts()));
+    connect(ActionManager::command(Constants::LOCATE_IN_SIDEBAR), SIGNAL(keySequenceChanged()),
             this, SLOT(updateActionShortcuts()));
     connect(ActionManager::command(Constants::GO_BACK), SIGNAL(keySequenceChanged()),
             this, SLOT(updateActionShortcuts()));
@@ -360,6 +370,7 @@ void EditorToolBar::setCanGoForward(bool canGoForward)
 void EditorToolBar::updateActionShortcuts()
 {
     d->m_closeEditorButton->setToolTip(ActionManager::command(Constants::CLOSE)->stringWithAppendedShortcut(EditorManager::tr("Close Document")));
+    d->m_locateInSidebarButton->setToolTip(ActionManager::command(Constants::LOCATE_IN_SIDEBAR)->stringWithAppendedShortcut(EditorManager::tr("Locate in Sidebar")));
     d->m_goBackAction->setToolTip(ActionManager::command(Constants::GO_BACK)->action()->toolTip());
     d->m_goForwardAction->setToolTip(ActionManager::command(Constants::GO_FORWARD)->action()->toolTip());
     d->m_closeSplitButton->setToolTip(ActionManager::command(Constants::REMOVE_CURRENT_SPLIT)->stringWithAppendedShortcut(tr("Remove Split")));
@@ -377,6 +388,7 @@ void EditorToolBar::checkEditorStatus()
 void EditorToolBar::updateEditorStatus(IEditor *editor)
 {
     d->m_closeEditorButton->setEnabled(editor != 0);
+    d->m_locateInSidebarButton->setEnabled(editor != 0);
 
     if (!editor || !editor->document()) {
         d->m_lockButton->setIcon(QIcon());

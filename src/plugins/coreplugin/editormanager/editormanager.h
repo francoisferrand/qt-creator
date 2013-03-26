@@ -240,6 +240,7 @@ public slots:
     void removeCurrentSplit();
     void removeAllSplits();
     void gotoOtherSplit();
+    void locateInSidebar();
 
 private:
     QList<IDocument *> documentsForEditors(QList<IEditor *> editors) const;

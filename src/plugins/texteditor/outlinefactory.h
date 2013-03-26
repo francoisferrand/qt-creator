@@ -56,6 +56,7 @@ public:
 
     void saveSettings(int position);
     void restoreSettings(int position);
+    void syncWithCursor(Core::IEditor *editor);
 
 private:
     bool isCursorSynchronized() const;
@@ -93,6 +94,9 @@ public:
     virtual Core::NavigationView createWidget();
     virtual void saveSettings(int position, QWidget *widget);
     virtual void restoreSettings(int position, QWidget *widget);
+    virtual void sync(Core::IEditor *editor, QWidget *widget);
+    virtual bool canSync(Core::IEditor *editor);
+
 private:
     QList<IOutlineWidgetFactory*> m_factories;
 };

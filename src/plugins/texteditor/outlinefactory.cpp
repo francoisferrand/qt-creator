@@ -133,6 +133,12 @@ void OutlineWidgetStack::toggleCursorSynchronization()
         outlineWidget->setCursorSynchronization(m_syncWithEditor);
 }
 
+void OutlineWidgetStack::syncWithCursor(Core::IEditor *editor)
+{
+    if (IOutlineWidget *outlineWidget = qobject_cast<IOutlineWidget*>(currentWidget()))
+        outlineWidget->syncWithCursor(editor);
+}
+
 void OutlineWidgetStack::updateFilterMenu()
 {
     m_filterMenu->clear();
@@ -229,6 +235,18 @@ void OutlineFactory::restoreSettings(int position, QWidget *widget)
     OutlineWidgetStack *widgetStack = qobject_cast<OutlineWidgetStack *>(widget);
     Q_ASSERT(widgetStack);
     widgetStack->restoreSettings(position);
+}
+
+void OutlineFactory::sync(Core::IEditor *editor, QWidget *widget)
+{
+    OutlineWidgetStack *widgetStack = qobject_cast<OutlineWidgetStack *>(widget);
+    Q_ASSERT(widgetStack);
+    widgetStack->syncWithCursor(editor);
+}
+
+bool OutlineFactory::canSync(Core::IEditor *editor)
+{
+    return true;
 }
 
 } // namespace Internal

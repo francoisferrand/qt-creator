@@ -43,6 +43,7 @@ class StyledBar;
 }
 
 namespace Core {
+class IEditor;
 class INavigationWidgetFactory;
 class Command;
 class NavigationWidget;
@@ -70,6 +71,9 @@ public:
     void restoreSettings();
 
     Core::Command *command(const QString &title) const;
+
+    void sync(IEditor *editor);
+    bool canSync(IEditor *editor);
 
 signals:
     void splitMe();

@@ -43,6 +43,7 @@ class QStandardItemModel;
 QT_END_NAMESPACE
 
 namespace Core {
+class IEditor;
 class INavigationWidgetFactory;
 class IMode;
 class Command;
@@ -108,6 +109,9 @@ public:
 
     QHash<Id, Core::Command *> commandMap() const;
     QAbstractItemModel *factoryModel() const;
+
+    void sync(IEditor *editor);
+    bool canSync(IEditor *editor);
 
 protected:
     void resizeEvent(QResizeEvent *);

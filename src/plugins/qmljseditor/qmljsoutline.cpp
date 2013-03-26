@@ -153,6 +153,16 @@ void QmlJSOutlineWidget::setCursorSynchronization(bool syncWithCursor)
         updateSelectionInTree(m_editor->outlineModelIndex());
 }
 
+void QmlJSOutlineWidget::syncWithCursor(Core::IEditor *editor)
+{
+    if (QmlJSTextEditorWidget * jsEditor = qobject_cast<QmlJSTextEditorWidget *>(editor->widget())) {
+        bool syncWithCursor = m_enableCursorSync;
+        m_enableCursorSync = true;
+        updateSelectionInTree(jsEditor->outlineModelIndex());
+        m_enableCursorSync = syncWithCursor;
+    }
+}
+
 void QmlJSOutlineWidget::restoreSettings(int position)
 {
     QSettings *settings = Core::ICore::settings();

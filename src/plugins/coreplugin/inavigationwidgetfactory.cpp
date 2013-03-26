@@ -45,3 +45,12 @@ void INavigationWidgetFactory::saveSettings(int /* position */, QWidget * /* wid
 void INavigationWidgetFactory::restoreSettings(int /* position */, QWidget * /* widget */)
 {
 }
+
+void INavigationWidgetFactory::sync(IEditor * /*editor*/, QWidget * /*widget*/)
+{
+}
+
+bool INavigationWidgetFactory::canSync(IEditor * /*editor*/) const
+{
+    return false;
+}

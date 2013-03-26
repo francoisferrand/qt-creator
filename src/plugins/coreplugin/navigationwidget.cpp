@@ -219,6 +219,20 @@ QAbstractItemModel *NavigationWidget::factoryModel() const
     return d->m_factoryModel;
 }
 
+void NavigationWidget::sync(IEditor *editor)
+{
+    foreach (Internal::NavigationSubWidget *subWidget, d->m_subWidgets)
+        subWidget->sync(editor);
+}
+
+bool NavigationWidget::canSync(IEditor *editor)
+{
+    foreach (Internal::NavigationSubWidget *subWidget, d->m_subWidgets)
+        if (subWidget->canSync(editor))
+            return true;
+    return false;
+}
+
 void NavigationWidget::updateToggleText()
 {
     bool haveData = d->m_factoryModel->rowCount();

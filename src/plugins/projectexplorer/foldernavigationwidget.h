@@ -31,6 +31,7 @@
 #define FOLDERNAVIGATIONWIDGET_H
 
 #include <coreplugin/inavigationwidgetfactory.h>
+#include <coreplugin/editormanager/ieditor.h>
 
 #include <QWidget>
 
@@ -68,6 +69,7 @@ public:
 public slots:
     void setAutoSynchronization(bool sync);
     void toggleAutoSynchronization();
+    void sync(Core::IEditor *editor);
 
 private slots:
     void setCurrentFile(const QString &filePath);
@@ -109,6 +111,8 @@ public:
     Core::NavigationView createWidget();
     void saveSettings(int position, QWidget *widget);
     void restoreSettings(int position, QWidget *widget);
+    void sync(Core::IEditor *editor, QWidget *widget);
+    bool canSync(Core::IEditor *editor);
 };
 
 } // namespace Internal

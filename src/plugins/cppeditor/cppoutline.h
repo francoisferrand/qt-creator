@@ -71,6 +71,7 @@ public:
     // IOutlineWidget
     virtual QList<QAction*> filterMenuActions() const;
     virtual void setCursorSynchronization(bool syncWithCursor);
+    virtual void syncWithCursor(Core::IEditor *editor);
 
 private slots:
     void modelUpdated();

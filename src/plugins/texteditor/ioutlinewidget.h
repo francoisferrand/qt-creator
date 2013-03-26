@@ -47,6 +47,7 @@ public:
 
     virtual QList<QAction*> filterMenuActions() const = 0;
     virtual void setCursorSynchronization(bool syncWithCursor) = 0;
+    virtual void syncWithCursor(Core::IEditor *editor) = 0;
 
     virtual void restoreSettings(int position) { Q_UNUSED(position); }
     virtual void saveSettings(int position) { Q_UNUSED(position); }

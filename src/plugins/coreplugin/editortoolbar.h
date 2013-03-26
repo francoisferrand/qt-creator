@@ -90,6 +90,7 @@ signals:
     void horizontalSplitClicked();
     void verticalSplitClicked();
     void closeSplitClicked();
+    void locateInSidebarClicked();
     void listSelectionActivated(int row);
 
 private slots:

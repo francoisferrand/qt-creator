@@ -49,6 +49,7 @@
 #include <coreplugin/editormanager/iexternaleditor.h>
 #include <coreplugin/editortoolbar.h>
 #include <coreplugin/fileutils.h>
+#include <coreplugin/navigationwidget.h>
 #include <coreplugin/icorelistener.h>
 #include <coreplugin/id.h>
 #include <coreplugin/imode.h>
@@ -205,6 +206,7 @@ struct EditorManagerPrivate
     QAction *m_removeCurrentSplitAction;
     QAction *m_removeAllSplitsAction;
     QAction *m_gotoOtherSplitAction;
+    QAction *m_locateInSidebarAction;
 
     QAction *m_saveCurrentEditorContextAction;
     QAction *m_saveAsCurrentEditorContextAction;
@@ -408,6 +410,10 @@ EditorManager::EditorManager(QWidget *parent) :
     cmd->setDefaultKeySequence(QKeySequence(UseMacShortcuts ? tr("Meta+E,o") : tr("Ctrl+E,o")));
     mwindow->addAction(cmd, Constants::G_WINDOW_SPLIT);
     connect(d->m_gotoOtherSplitAction, SIGNAL(triggered()), this, SLOT(gotoOtherSplit()));
+
+    d->m_locateInSidebarAction = new QAction(tr("Locate in Sidebar"), this);
+    cmd = ActionManager::registerAction(d->m_locateInSidebarAction, Constants::LOCATE_IN_SIDEBAR, editManagerContext);
+    connect(d->m_locateInSidebarAction, SIGNAL(triggered()), this, SLOT(locateInSidebar()));
 
     ActionContainer *medit = ActionManager::actionContainer(Constants::M_EDIT);
     ActionContainer *advancedMenu = ActionManager::createMenu(Constants::M_EDIT_ADVANCED);
@@ -2267,6 +2273,12 @@ void EditorManager::gotoOtherSplit()
             setCurrentView(view);
         }
     }
+}
+
+void EditorManager::locateInSidebar()
+{
+    IEditor *editor = d->m_currentEditor;
+    NavigationWidget::instance()->sync(editor);
 }
 
 qint64 EditorManager::maxTextFileSize()

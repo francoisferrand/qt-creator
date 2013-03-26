@@ -286,6 +286,16 @@ void ProjectTreeWidget::setAutoSynchronization(bool sync, bool syncNow)
     }
 }
 
+void ProjectTreeWidget::sync(Core::IEditor *editor)
+{
+	ProjectExplorer::ProjectExplorerPlugin * projectExplorer = ProjectExplorer::ProjectExplorerPlugin::instance();
+	if (ProjectExplorer::SessionManager * session = projectExplorer ? projectExplorer->session() : NULL)
+		if (Core::IDocument *doc = editor->document())
+			if (Project * project = session->projectForFile(doc->fileName()))
+				if (Node *node = session->nodeForFile(doc->fileName(), project))
+					setCurrentItem(node, project);
+}
+
 void ProjectTreeWidget::collapseAll()
 {
     m_view->collapseAll();
@@ -475,4 +485,16 @@ void ProjectTreeWidgetFactory::restoreSettings(int position, QWidget *widget)
     ptw->setProjectFilter(settings->value(baseKey + QLatin1String(".ProjectFilter"), false).toBool());
     ptw->setGeneratedFilesFilter(settings->value(baseKey + QLatin1String(".GeneratedFilter"), true).toBool());
     ptw->setAutoSynchronization(settings->value(baseKey +  QLatin1String(".SyncWithEditor"), true).toBool());
+}
+
+void ProjectTreeWidgetFactory::sync(Core::IEditor *editor, QWidget *widget)
+{
+    ProjectTreeWidget *ptw = qobject_cast<ProjectTreeWidget *>(widget);
+    Q_ASSERT(ptw);
+    ptw->sync(editor);
+}
+
+bool ProjectTreeWidgetFactory::canSync(Core::IEditor * /*editor*/)
+{
+    return true;
 }

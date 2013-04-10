@@ -56,6 +56,7 @@ class SymbolTable;
 class NameVisitor;
 class Name;
 class Identifier;
+class AnonymousNameId;
 class TemplateNameId;
 class DestructorNameId;
 class OperatorNameId;

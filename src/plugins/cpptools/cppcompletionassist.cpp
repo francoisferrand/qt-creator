@@ -1450,6 +1450,14 @@ bool CppCompletionAssistProcessor::completeScope(const QList<CPlusPlus::LookupIt
                 break;
             }
 
+            // it can be class defined inside a block
+            if (classTy->enclosingScope()->isBlock()) {
+                if (ClassOrNamespace *b = context.lookupType(classTy->name(), classTy->enclosingScope())) {
+                    completeClass(b);
+                    break;
+                }
+            }
+
         } else if (Namespace *nsTy = ty->asNamespaceType()) {
             if (ClassOrNamespace *b = context.lookupType(nsTy)) {
                 completeNamespace(b);
@@ -1465,10 +1473,22 @@ bool CppCompletionAssistProcessor::completeScope(const QList<CPlusPlus::LookupIt
             }
 
         } else if (Enum *e = ty->asEnumType()) {
+            // it can be class defined inside a block
+            if (e->enclosingScope()->isBlock()) {
+                if (ClassOrNamespace *b = context.lookupType(e)) {
+                    Block *block = e->enclosingScope()->asBlock();
+                    if (ClassOrNamespace *bb = b->findBlock(block)) {
+                        completeNamespace(bb);
+                        break;
+                    }
+                }
+            }
+
             if (ClassOrNamespace *b = context.lookupType(e)) {
                 completeNamespace(b);
                 break;
             }
+
         }
     }
 

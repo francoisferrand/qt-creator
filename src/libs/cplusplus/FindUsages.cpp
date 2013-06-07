@@ -207,7 +207,32 @@ bool FindUsages::checkCandidates(const QList<LookupItem> &candidates) const
             }
 
             if (isLocalScope(_declSymbol->enclosingScope()) || isLocalScope(s->enclosingScope())) {
-                if (s->enclosingScope()->isTemplate()) {
+                if (_declSymbol->isClass() && _declSymbol->enclosingScope()->isTemplate()
+                        && s->isClass() && s->enclosingScope()->isTemplate()) {
+                    // for definition of functions of class defined outside the class definition
+                    Scope *templEnclosingDeclSymbol = _declSymbol->enclosingScope();
+                    Scope *scopeOfTemplEnclosingDeclSymbol
+                            = templEnclosingDeclSymbol->enclosingScope();
+                    Scope *templEnclosingCandidateSymbol = s->enclosingScope();
+                    Scope *scopeOfTemplEnclosingCandidateSymbol
+                            = templEnclosingCandidateSymbol->enclosingScope();
+
+                    if (scopeOfTemplEnclosingCandidateSymbol != scopeOfTemplEnclosingDeclSymbol)
+                        return false;
+                } else if (_declSymbol->isClass() && _declSymbol->enclosingScope()->isTemplate()
+                        && s->enclosingScope()->isClass()
+                        && s->enclosingScope()->enclosingScope()->isTemplate()) {
+                    // for declaration inside template class
+                    Scope *templEnclosingDeclSymbol = _declSymbol->enclosingScope();
+                    Scope *scopeOfTemplEnclosingDeclSymbol
+                            = templEnclosingDeclSymbol->enclosingScope();
+                    Scope *templEnclosingCandidateSymbol = s->enclosingScope()->enclosingScope();
+                    Scope *scopeOfTemplEnclosingCandidateSymbol
+                            = templEnclosingCandidateSymbol->enclosingScope();
+
+                    if (scopeOfTemplEnclosingCandidateSymbol !=  scopeOfTemplEnclosingDeclSymbol)
+                        return false;
+                } else if (s->enclosingScope()->isTemplate() && ! _declSymbol->isTypenameArgument()) {
                     if (_declSymbol->enclosingScope()->isTemplate()) {
                         if (s->enclosingScope()->enclosingScope() != _declSymbol->enclosingScope()->enclosingScope())
                             return false;
@@ -215,10 +240,8 @@ bool FindUsages::checkCandidates(const QList<LookupItem> &candidates) const
                         if (s->enclosingScope()->enclosingScope() != _declSymbol->enclosingScope())
                             return false;
                     }
-                } else if (_declSymbol->enclosingScope()->isTemplate() && s->isTemplate()) {
-                    if (_declSymbol->enclosingScope()->enclosingScope() != s->enclosingScope())
-                        return false;
-                } else if (! s->isUsingDeclaration() && s->enclosingScope() != _declSymbol->enclosingScope()) {
+                } else if (! s->isUsingDeclaration()
+                           && s->enclosingScope() != _declSymbol->enclosingScope()) {
                     return false;
                 }
             }

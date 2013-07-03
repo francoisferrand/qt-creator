@@ -386,7 +386,8 @@ SearchResult *SearchResultWindow::startNewSearch(const QString &label,
                                                  const QString &searchTerm,
                                                  SearchMode searchOrSearchAndReplace,
                                                  PreserveCaseMode preserveCaseMode,
-                                                 const QString &cfgGroup)
+                                                 const QString &cfgGroup,
+                                                 Core::Id languageId)
 {
     if (d->m_searchResults.size() >= MAX_SEARCH_HISTORY) {
         d->m_searchResultWidgets.last()->notifyVisibilityChanged(false);
@@ -399,7 +400,7 @@ SearchResult *SearchResultWindow::startNewSearch(const QString &label,
             d->m_currentIndex = d->m_recentSearchesBox->count() - 1;
         }
     }
-    Internal::SearchResultWidget *widget = new Internal::SearchResultWidget;
+    Internal::SearchResultWidget *widget = new Internal::SearchResultWidget();
     d->m_searchResultWidgets.prepend(widget);
     d->m_widget->insertWidget(1, widget);
     connect(widget, SIGNAL(navigateStateChanged()), this, SLOT(navigateStateChanged()));
@@ -418,6 +419,7 @@ SearchResult *SearchResultWindow::startNewSearch(const QString &label,
     if (d->m_currentIndex > 0)
         ++d->m_currentIndex; // so setCurrentIndex still knows about the right "currentIndex" and its widget
     d->setCurrentIndex(1);
+    emit searchCreated(result, languageId);
     return result;
 }
 
@@ -720,6 +722,14 @@ void SearchResult::setSearchAgainEnabled(bool enabled)
 void SearchResult::popup()
 {
     m_widget->sendRequestPopup();
+}
+
+/*!
+ * Set the tabwidth to use for this search.
+ */
+void SearchResult::setTabWidth(int width)
+{
+    m_widget->setTabWidth(width);
 }
 
 } // namespace Core

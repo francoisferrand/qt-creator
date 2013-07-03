@@ -49,6 +49,7 @@
 #include <qmljs/parser/qmljsastvisitor_p.h>
 #include <qmljs/parser/qmljsast_p.h>
 #include <qmljstools/qmljsmodelmanager.h>
+#include <qmljstools/qmljstoolsconstants.h>
 
 #include "qmljseditorconstants.h"
 
@@ -931,11 +932,14 @@ void FindReferences::displayResults(int first, int last)
 
         if (replacement.isEmpty()) {
             m_currentSearch = Core::SearchResultWindow::instance()->startNewSearch(
-                        label, QString(), symbolName, Core::SearchResultWindow::SearchOnly);
+                        label, QString(), symbolName, Core::SearchResultWindow::SearchOnly,
+                        Core::SearchResultWindow::PreserveCaseEnabled, QString(),
+                        QmlJSTools::Constants::QML_JS_SETTINGS_ID);
         } else {
             m_currentSearch = Core::SearchResultWindow::instance()->startNewSearch(
                         label, QString(), symbolName, Core::SearchResultWindow::SearchAndReplace,
-                        Core::SearchResultWindow::PreserveCaseDisabled);
+                        Core::SearchResultWindow::PreserveCaseDisabled, QString(),
+                        QmlJSTools::Constants::QML_JS_SETTINGS_ID);
             m_currentSearch->setTextToReplace(replacement);
             connect(m_currentSearch, SIGNAL(replaceButtonClicked(QString,QList<Core::SearchResultItem>,bool)),
                     SLOT(onReplaceButtonClicked(QString,QList<Core::SearchResultItem>,bool)));

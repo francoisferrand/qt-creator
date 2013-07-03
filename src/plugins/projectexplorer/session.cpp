@@ -42,8 +42,12 @@
 #include <coreplugin/coreconstants.h>
 #include <coreplugin/progressmanager/progressmanager.h>
 #include <coreplugin/modemanager.h>
+#include <coreplugin/find/searchresultwindow.h>
 
+#include <texteditor/icodestylepreferences.h>
 #include <texteditor/itexteditor.h>
+#include <texteditor/texteditorsettings.h>
+#include <texteditor/tabsettings.h>
 
 #include <utils/stylehelper.h>
 
@@ -139,6 +143,8 @@ SessionManager::SessionManager(QObject *parent)
             this, SLOT(markSessionFileDirty()));
     connect(EditorManager::instance(), SIGNAL(editorsClosed(QList<Core::IEditor*>)),
             this, SLOT(markSessionFileDirty()));
+    connect(Core::SearchResultWindow::instance(), SIGNAL(searchCreated(Core::SearchResult*,Core::Id)),
+            this, SLOT(configureSearch(Core::SearchResult*,Core::Id)));
 }
 
 SessionManager::~SessionManager()
@@ -574,6 +580,26 @@ void SessionManager::configureEditor(Core::IEditor *editor, const QString &fileN
         if (project)
             project->editorConfiguration()->configureEditor(textEditor);
     }
+}
+
+static TextEditor::ICodeStylePreferences *getCodeStyleForLanguage(Core::Id language)
+{
+    if (Project *project = ProjectExplorerPlugin::currentProject())
+        return project->editorConfiguration()->codeStyle(language);
+    return TextEditor::TextEditorSettings::instance()->codeStyle(language);
+}
+
+void SessionManager::configureSearch(Core::SearchResult *search, Core::Id language)
+{
+    TextEditor::ICodeStylePreferences *codeStyle = getCodeStyleForLanguage(language);
+    search->setTabWidth(codeStyle->currentTabSettings().m_tabSize);
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+    connect(codeStyle, &TextEditor::ICodeStylePreferences::currentTabSettingsChanged, search,
+            [=] (const TextEditor::TabSettings &settings) -> void {
+                search->setTabWidth(settings.m_tabSize);
+            });
+#endif
 }
 
 void SessionManager::updateWindowTitle()

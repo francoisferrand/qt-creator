@@ -31,6 +31,7 @@
 #ifndef SEARCHRESULTWINDOW_H
 #define SEARCHRESULTWINDOW_H
 
+#include <coreplugin/id.h>
 #include <coreplugin/ioutputpane.h>
 
 #include <QVariant>
@@ -108,6 +109,7 @@ public slots:
     void restart();
     void setSearchAgainEnabled(bool enabled);
     void popup();
+    void setTabWidth(int width);
 
 signals:
     void activated(const Core::SearchResultItem &item);
@@ -180,7 +182,11 @@ public:
                                  const QString &searchTerm,
                                  SearchMode searchOrSearchAndReplace = SearchOnly,
                                  PreserveCaseMode preserveCaseMode = PreserveCaseEnabled,
-                                 const QString &cfgGroup = QString());
+                                 const QString &cfgGroup = QString(),
+                                 Id languageId = Id());
+
+signals:
+    void searchCreated(Core::SearchResult *result, Core::Id languageId);
 
 public slots:
     void clearContents();

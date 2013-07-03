@@ -33,6 +33,7 @@
 
 #include "searchresultwindow.h"
 
+#include <coreplugin/id.h>
 #include <coreplugin/infobar.h>
 
 #include <QWidget>
@@ -81,6 +82,7 @@ public:
     void notifyVisibilityChanged(bool visible);
 
     void setTextEditorFont(const QFont &font, const SearchResultColor &color);
+    void setTabWidth(int tabWidth);
 
     void setAutoExpandResults(bool expand);
     void expandAll();

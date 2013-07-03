@@ -33,6 +33,8 @@
 
 #include "projectexplorer_export.h"
 
+#include <coreplugin/id.h>
+
 #include <utils/persistentsettings.h>
 
 #include <QHash>
@@ -49,6 +51,7 @@ QT_END_NAMESPACE
 namespace Core {
 class IMode;
 class IEditor;
+class SearchResult;
 }
 
 namespace ProjectExplorer {
@@ -144,6 +147,7 @@ private slots:
     static void saveActiveMode(Core::IMode *mode);
     static void clearProjectFileCache();
     static void configureEditor(Core::IEditor *editor, const QString &fileName);
+    static void configureSearch(Core::SearchResult *search, Core::Id language);
     static void updateWindowTitle();
     static void markSessionFileDirty(bool makeDefaultVirginDirty = true);
     static void projectDisplayNameChanged();

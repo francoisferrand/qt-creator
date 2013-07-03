@@ -110,7 +110,9 @@ Core::FindFlags SymbolsFindFilter::supportedFindFlags() const
 void SymbolsFindFilter::findAll(const QString &txt, Core::FindFlags findFlags)
 {
     Core::SearchResultWindow *window = Core::SearchResultWindow::instance();
-    Core::SearchResult *search = window->startNewSearch(label(), toolTip(findFlags), txt);
+    Core::SearchResult *search = window->startNewSearch(label(), toolTip(findFlags), txt, Core::SearchResultWindow::SearchOnly,
+                                                        Core::SearchResultWindow::PreserveCaseEnabled, QString(),
+                                                        CppTools::Constants::CPP_SETTINGS_ID);
     search->setSearchAgainSupported(true);
     connect(search, SIGNAL(activated(Core::SearchResultItem)),
             this, SLOT(openEditor(Core::SearchResultItem)));

@@ -332,7 +332,8 @@ void CppFindReferences::findUsages(CPlusPlus::Symbol *symbol,
                                                 replace ? Core::SearchResultWindow::SearchAndReplace
                                                         : Core::SearchResultWindow::SearchOnly,
                                                 Core::SearchResultWindow::PreserveCaseDisabled,
-                                                QLatin1String("CppEditor"));
+                                                QLatin1String("CppEditor"),
+                                                CppTools::Constants::CPP_SETTINGS_ID);
     search->setTextToReplace(replacement);
     connect(search, SIGNAL(replaceButtonClicked(QString,QList<Core::SearchResultItem>,bool)),
             SLOT(onReplaceButtonClicked(QString,QList<Core::SearchResultItem>,bool)));
@@ -650,7 +651,8 @@ void CppFindReferences::findMacroUses(const Macro &macro, const QString &replace
                 replace ? Core::SearchResultWindow::SearchAndReplace
                         : Core::SearchResultWindow::SearchOnly,
                 Core::SearchResultWindow::PreserveCaseDisabled,
-                QLatin1String("CppEditor"));
+                QLatin1String("CppEditor"),
+                CppTools::Constants::CPP_SETTINGS_ID);
 
     search->setTextToReplace(replacement);
     connect(search, SIGNAL(replaceButtonClicked(QString,QList<Core::SearchResultItem>,bool)),

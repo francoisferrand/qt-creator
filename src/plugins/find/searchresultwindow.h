@@ -32,6 +32,7 @@
 
 #include "find_global.h"
 
+#include <coreplugin/id.h>
 #include <coreplugin/ioutputpane.h>
 
 #include <QVariant>
@@ -173,7 +174,8 @@ public:
                                  const QString &toolTip,
                                  const QString &searchTerm,
                                  SearchMode searchOrSearchAndReplace = SearchOnly,
-                                 const QString &cfgGroup = QString());
+                                 const QString &cfgGroup = QString(),
+                                 Core::Id languageId = Core::Id());
 
 public slots:
     void clearContents();

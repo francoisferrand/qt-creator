@@ -381,7 +381,8 @@ SearchResult *SearchResultWindow::startNewSearch(const QString &label,
                                                  const QString &toolTip,
                                                  const QString &searchTerm,
                                                  SearchMode searchOrSearchAndReplace,
-                                                 const QString &cfgGroup)
+                                                 const QString &cfgGroup,
+                                                 Core::Id languageId)
 {
     if (d->m_searchResults.size() >= MAX_SEARCH_HISTORY) {
         d->m_searchResultWidgets.last()->notifyVisibilityChanged(false);
@@ -394,7 +395,7 @@ SearchResult *SearchResultWindow::startNewSearch(const QString &label,
             d->m_currentIndex = d->m_recentSearchesBox->count() - 1;
         }
     }
-    Internal::SearchResultWidget *widget = new Internal::SearchResultWidget;
+    Internal::SearchResultWidget *widget = new Internal::SearchResultWidget(languageId);
     d->m_searchResultWidgets.prepend(widget);
     d->m_widget->insertWidget(1, widget);
     connect(widget, SIGNAL(navigateStateChanged()), this, SLOT(navigateStateChanged()));

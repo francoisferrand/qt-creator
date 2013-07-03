@@ -77,7 +77,7 @@ public slots:
 using namespace Find;
 using namespace Find::Internal;
 
-SearchResultWidget::SearchResultWidget(QWidget *parent) :
+SearchResultWidget::SearchResultWidget(Core::Id languageId, QWidget *parent) :
     QWidget(parent),
     m_count(0),
     m_isShowingReplaceUI(false),
@@ -117,7 +117,7 @@ SearchResultWidget::SearchResultWidget(QWidget *parent) :
     layout->addWidget(m_messageWidget);
     m_messageWidget->setVisible(false);
 
-    m_searchResultTreeView = new Internal::SearchResultTreeView(this);
+    m_searchResultTreeView = new Internal::SearchResultTreeView(this, languageId);
     m_searchResultTreeView->setFrameStyle(QFrame::NoFrame);
     m_searchResultTreeView->setAttribute(Qt::WA_MacShowFocusRect, false);
     Aggregation::Aggregate * agg = new Aggregation::Aggregate;

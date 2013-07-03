@@ -32,6 +32,7 @@
 
 #include "searchresultwindow.h"
 
+#include <coreplugin/id.h>
 #include <coreplugin/infobar.h>
 
 #include <QFrame>
@@ -51,7 +52,7 @@ class SearchResultWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit SearchResultWidget(QWidget *parent = 0);
+    explicit SearchResultWidget(Core::Id languageId = Core::Id(), QWidget *parent = 0);
     ~SearchResultWidget();
 
     void setInfo(const QString &label, const QString &toolTip, const QString &term);

@@ -34,6 +34,12 @@
 
 #include <QTreeView>
 
+#include <coreplugin/id.h>
+
+namespace TextEditor {
+class TabSettings;
+}
+
 namespace Find {
 namespace Internal {
 
@@ -45,7 +51,7 @@ class SearchResultTreeView : public QTreeView
     Q_OBJECT
 
 public:
-    explicit SearchResultTreeView(QWidget *parent = 0);
+    explicit SearchResultTreeView(QWidget *parent = 0, Core::Id languageId = Core::Id());
 
     void setAutoExpandResults(bool expand);
     void setTextEditorFont(const QFont &font, const SearchResultColor color);
@@ -59,6 +65,7 @@ signals:
 public slots:
     void clear();
     void emitJumpToSearchResult(const QModelIndex &index);
+    void tabSettingsChanged(const TextEditor::TabSettings &ts);
 
 protected:
     void keyPressEvent(QKeyEvent *e);

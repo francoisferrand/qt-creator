@@ -33,24 +33,46 @@
 #include "searchresulttreeitemdelegate.h"
 #include "searchresultcolor.h"
 
+#include <texteditor/icodestylepreferences.h>
+#include <texteditor/tabsettings.h>
+#include <texteditor/texteditorsettings.h>
+
+#include <projectexplorer/project.h>
+#include <projectexplorer/projectexplorer.h>
+#include <projectexplorer/editorconfiguration.h>
+
 #include <QHeaderView>
 #include <QKeyEvent>
 
 using namespace Find::Internal;
 
-SearchResultTreeView::SearchResultTreeView(QWidget *parent)
+static TextEditor::ICodeStylePreferences *getCodeStylePreferences(Core::Id languageId)
+{
+    ProjectExplorer::Project *project = ProjectExplorer::ProjectExplorerPlugin::currentProject();
+    if (!project)
+        return TextEditor::TextEditorSettings::instance()->codeStyle(languageId);
+
+    ProjectExplorer::EditorConfiguration *editorConfiguration = project->editorConfiguration();
+    return editorConfiguration->codeStyle(languageId);
+}
+
+SearchResultTreeView::SearchResultTreeView(QWidget *parent, Core::Id languageId)
     : QTreeView(parent)
     , m_model(new SearchResultTreeModel(this))
     , m_autoExpandResults(false)
 {
+    TextEditor::ICodeStylePreferences *codeStylePref = getCodeStylePreferences(languageId);
+
     setModel(m_model);
-    setItemDelegate(new SearchResultTreeItemDelegate(this));
+    setItemDelegate(new SearchResultTreeItemDelegate(codeStylePref->currentTabSettings().m_tabSize, this));
     setIndentation(14);
     setUniformRowHeights(true);
     setExpandsOnDoubleClick(true);
     header()->hide();
 
     connect(this, SIGNAL(activated(QModelIndex)), this, SLOT(emitJumpToSearchResult(QModelIndex)));
+    connect(codeStylePref, SIGNAL(currentTabSettingsChanged(TextEditor::TabSettings)),
+            this, SLOT(tabSettingsChanged(TextEditor::TabSettings)));
 }
 
 void SearchResultTreeView::setAutoExpandResults(bool expand)
@@ -84,6 +106,12 @@ void SearchResultTreeView::emitJumpToSearchResult(const QModelIndex &index)
     SearchResultItem item = model()->data(index, ItemDataRoles::ResultItemRole).value<SearchResultItem>();
 
     emit jumpToSearchResult(item);
+}
+
+void SearchResultTreeView::tabSettingsChanged(const TextEditor::TabSettings &ts)
+{
+    SearchResultTreeItemDelegate *delegate = static_cast<SearchResultTreeItemDelegate *>(itemDelegate());
+    delegate->setTabWidth(ts.m_tabSize);
 }
 
 void SearchResultTreeView::keyPressEvent(QKeyEvent *e)

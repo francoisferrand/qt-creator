@@ -253,7 +253,8 @@ void CppFindReferences::findUsages(CPlusPlus::Symbol *symbol,
                                                 overview.prettyName(context.fullyQualifiedName(symbol)),
                                                 replace ? Find::SearchResultWindow::SearchAndReplace
                                                         : Find::SearchResultWindow::SearchOnly,
-                                                QLatin1String("CppEditor"));
+                                                QLatin1String("CppEditor"),
+                                                CppTools::Constants::CPP_SETTINGS_ID);
     search->setTextToReplace(replacement);
     connect(search, SIGNAL(replaceButtonClicked(QString,QList<Find::SearchResultItem>,bool)),
             SLOT(onReplaceButtonClicked(QString,QList<Find::SearchResultItem>,bool)));
@@ -653,7 +654,8 @@ void CppFindReferences::findMacroUses(const Macro &macro, const QString &replace
                 QString::fromUtf8(macro.name()),
                 replace ? Find::SearchResultWindow::SearchAndReplace
                         : Find::SearchResultWindow::SearchOnly,
-                QLatin1String("CppEditor"));
+                QLatin1String("CppEditor"),
+                CppTools::Constants::CPP_SETTINGS_ID);
 
     search->setTextToReplace(replacement);
     connect(search, SIGNAL(replaceButtonClicked(QString,QList<Find::SearchResultItem>,bool)),

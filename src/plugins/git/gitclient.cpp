@@ -960,6 +960,7 @@ void GitClient::diff(const QString &workingDirectory,
 
             editor = createVcsEditor(editorId, title,
                                      workingDirectory, CodecSource, "originalFileName", workingDirectory, argWidget);
+            connect(editor, SIGNAL(diffChunkApplied(VcsBase::DiffChunk)), argWidget, SLOT(executeCommand()));
             connect(editor, SIGNAL(diffChunkReverted(VcsBase::DiffChunk)), argWidget, SLOT(executeCommand()));
         }
 
@@ -1030,6 +1031,7 @@ void GitClient::diff(const QString &workingDirectory,
                     new GitFileDiffArgumentsWidget(this, workingDirectory, diffArgs, fileName);
 
             editor = createVcsEditor(editorId, title, sourceFile, CodecSource, "originalFileName", sourceFile, argWidget);
+            connect(editor, SIGNAL(diffChunkApplied(VcsBase::DiffChunk)), argWidget, SLOT(executeCommand()));
             connect(editor, SIGNAL(diffChunkReverted(VcsBase::DiffChunk)), argWidget, SLOT(executeCommand()));
         }
         editor->setDiffBaseDirectory(workingDirectory);
@@ -2143,10 +2145,11 @@ bool GitClient::synchronousCleanList(const QString &workingDirectory, QStringLis
 }
 
 bool GitClient::synchronousApplyPatch(const QString &workingDirectory,
-                                      const QString &file, QString *errorMessage)
+                                      const QString &file, QString *errorMessage,
+                                      const QStringList &arguments)
 {
     QStringList args;
-    args << QLatin1String("apply") << QLatin1String("--whitespace=fix") << file;
+    args << QLatin1String("apply") << QLatin1String("--whitespace=fix") << arguments << file;
     QByteArray outputText;
     QByteArray errorText;
     const bool rc = fullySynchronousGit(workingDirectory, args, &outputText, &errorText);

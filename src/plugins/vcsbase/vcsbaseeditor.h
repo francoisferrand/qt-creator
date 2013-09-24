@@ -82,6 +82,7 @@ public:
 
     QString fileName;
     QByteArray chunk;
+    QByteArray header;
 };
 
 class VCSBASE_EXPORT VcsBaseEditorWidget : public TextEditor::BaseTextEditorWidget
@@ -236,6 +237,8 @@ protected:
      * source and version control. */
     virtual QString findDiffFile(const QString &f) const;
 
+    virtual void addDiffActions(QMenu *menu, const DiffChunk &chunk);
+
     virtual void addChangeActions(QMenu *menu, const QString &change);
 
     // Implement to return a set of change identifiers in
@@ -248,7 +251,7 @@ protected:
                                                                    const QColor &bg) const = 0;
     // Returns a local file name from the diff file specification
     // (text cursor at position above change hunk)
-    QString fileNameFromDiffSpecification(const QTextBlock &inBlock) const;
+    QString fileNameFromDiffSpecification(const QTextBlock &inBlock, QString *header = 0) const;
 
     // Implement to return decorated annotation change for "Annotate version"
     virtual QString decorateVersion(const QString &revision) const;

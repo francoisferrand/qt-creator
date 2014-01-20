@@ -2674,6 +2674,28 @@ bool Parser::parseBraceOrEqualInitializer0x(ExpressionAST *&node)
 
 bool Parser::parseInitializerClause0x(ExpressionAST *&node)
 {
+    //C99 designated initializer
+    if (LA() == T_DOT) {
+        consumeToken();
+        if (LA() != T_IDENTIFIER)
+            return false;
+        consumeToken();
+        if (LA() != T_EQUAL)
+            return false;
+        consumeToken();
+    }
+    else if (LA() == T_LBRACKET) {
+        consumeToken();
+        if (!parseNumericLiteral(node))
+            return false;
+        if (LA() != T_RBRACKET)
+            return false;
+        consumeToken();
+        if (LA() != T_EQUAL)
+            return false;
+        consumeToken();
+    }
+
     if (LA() == T_LBRACE)
         return parseBracedInitList0x(node);
 

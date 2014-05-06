@@ -290,6 +290,7 @@ Document::Document(const QString &fileName)
     features.cxx11Enabled = true;
     features.objCEnabled = true;
     features.c99Enabled = true;
+    features.cppDisabled = QFileInfo(fileName).suffix().toLower() == QLatin1String("c");
     _translationUnit = new TranslationUnit(_control, fileId);
     _translationUnit->setLanguageFeatures(features);
     (void) _control->switchTranslationUnit(_translationUnit);

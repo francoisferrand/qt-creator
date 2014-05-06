@@ -401,6 +401,7 @@ struct LanguageFeatures
             unsigned int cxx11Enabled : 1;
             unsigned int objCEnabled : 1;
             unsigned int c99Enabled : 1;
+            unsigned int cppDisabled : 1; // For C-only files
         };
     };
 };

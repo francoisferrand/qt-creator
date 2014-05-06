@@ -61,7 +61,7 @@ static inline int classify3(const char *s, LanguageFeatures features)
       }
     }
   }
-  else if (s[0] == 'n') {
+  else if (!features.cppDisabled && s[0] == 'n') {
     if (s[1] == 'e') {
       if (s[2] == 'w') {
         return T_NEW;
@@ -165,7 +165,7 @@ static inline int classify4(const char *s, LanguageFeatures features)
       }
     }
   }
-  else if (s[0] == 't') {
+  else if (!features.cppDisabled && s[0] == 't') {
     if (s[1] == 'h') {
       if (s[2] == 'i') {
         if (s[3] == 's') {
@@ -344,7 +344,7 @@ static inline int classify5(const char *s, LanguageFeatures features)
 
 static inline int classify6(const char *s, LanguageFeatures features)
 {
-  if (s[0] == 'd') {
+  if (!features.cppDisabled && s[0] == 'd') {
     if (s[1] == 'e') {
       if (s[2] == 'l') {
         if (s[3] == 'e') {
@@ -390,7 +390,7 @@ static inline int classify6(const char *s, LanguageFeatures features)
       }
     }
   }
-  else if (s[0] == 'f') {
+  else if (!features.cppDisabled && s[0] == 'f') {
     if (s[1] == 'r') {
       if (s[2] == 'i') {
         if (s[3] == 'e') {

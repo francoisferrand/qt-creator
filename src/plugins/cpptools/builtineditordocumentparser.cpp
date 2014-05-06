@@ -82,6 +82,11 @@ void BuiltinEditorDocumentParser::updateHelper(const InMemoryInfo &info)
         features = part->languageFeatures;
     }
 
+    if (QFileInfo(filePath()).suffix().toLower() == QLatin1String("c")) {
+        features.cxxEnabled = false;
+        features.cxx11Enabled = false;
+    }
+
     if (configFile != state.configFile) {
         state.configFile = configFile;
         invalidateSnapshot = true;

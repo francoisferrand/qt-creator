@@ -283,8 +283,13 @@ Document::Document(const QString &fileName)
     const QByteArray localFileName = fileName.toUtf8();
     const StringLiteral *fileId = _control->stringLiteral(localFileName.constData(),
                                                                       localFileName.size());
+    LanguageFeatures features = LanguageFeatures::defaultFeatures();
+    if (QFileInfo(fileName).suffix().toLower() == QLatin1String("c")) {
+        features.cxxEnabled = false;
+        features.cxx11Enabled = false;
+    }
     _translationUnit = new TranslationUnit(_control, fileId);
-    _translationUnit->setLanguageFeatures(LanguageFeatures::defaultFeatures());
+    _translationUnit->setLanguageFeatures(features);
 }
 
 Document::~Document()
@@ -592,7 +597,13 @@ LanguageFeatures Document::languageFeatures() const
 {
     if (TranslationUnit *tu = translationUnit())
         return tu->languageFeatures();
-    return LanguageFeatures::defaultFeatures();
+
+    LanguageFeatures features = LanguageFeatures::defaultFeatures();
+    if (QFileInfo(fileName()).suffix().toLower() == QLatin1String("c")) {
+        features.cxxEnabled = false;
+        features.cxx11Enabled = false;
+    }
+    return features;
 }
 
 void Document::setLanguageFeatures(LanguageFeatures features)

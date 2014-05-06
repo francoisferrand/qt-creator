@@ -120,6 +120,7 @@ void ProjectPart::evaluateToolchain(const ToolChain *tc,
 void ProjectPart::updateLanguageFeatures()
 {
     const bool hasQt = qtVersion != NoQt;
+    languageFeatures.cxxEnabled = languageVersion >= CXX98;
     languageFeatures.cxx11Enabled = languageVersion >= CXX11;
     languageFeatures.qtEnabled = hasQt;
     languageFeatures.qtMocRunEnabled = hasQt;

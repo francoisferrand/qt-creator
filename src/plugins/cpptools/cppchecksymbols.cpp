@@ -31,6 +31,7 @@
 #include "cppchecksymbols.h"
 
 #include "cpplocalsymbols.h"
+#include "cppmodelmanagerinterface.h"
 
 #include <utils/algorithm.h>
 #include <utils/qtcassert.h>
@@ -333,10 +334,6 @@ void CheckSymbols::run()
     _potentialStatics = collectTypes.statics();
 
     Utils::sort(_macroUses, sortByLinePredicate);
-    // TODO: Handle concurrent (write) access of diagnostic messages and ensure
-    //       propagation to the editor widget
-//    _doc->clearDiagnosticMessages();
-
     if (!isCanceled()) {
         if (_doc->translationUnit()) {
             accept(_doc->translationUnit()->ast());
@@ -345,15 +342,17 @@ void CheckSymbols::run()
         }
     }
 
+    CppModelManagerInterface *mmi = CppModelManagerInterface::instance();
+    static const QString key = QLatin1String("CppCheckSymbols.Diagnostics");
+    mmi->setExtraDiagnostics(_fileName, key, _diagMsgs);
+
     reportFinished();
 }
 
 bool CheckSymbols::warning(unsigned line, unsigned column, const QString &text, unsigned length)
 {
     Document::DiagnosticMessage m(Document::DiagnosticMessage::Warning, _fileName, line, column, text, length);
-    // TODO: Handle concurrent (write) access of diagnostic messages and ensure
-    //       propagation to the editor widget
-//    _doc->addDiagnosticMessage(m);
+    _diagMsgs.append(m);
     return false;
 }
 

@@ -182,6 +182,7 @@ private:
     QSet<QByteArray> _potentialStatics;
     QList<CPlusPlus::AST *> _astStack;
     QVector<Result> _usages;
+    QList<CPlusPlus::Document::DiagnosticMessage> _diagMsgs;
     int _chunkSize;
     unsigned _lineOfLastUsage;
     QList<Result> _macroUses;

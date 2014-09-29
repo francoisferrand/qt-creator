@@ -85,6 +85,11 @@ bool CppAutoCompleter::isInComment(const QTextCursor &cursor) const
     return isInCommentHelper(cursor);
 }
 
+bool CppAutoCompleter::isInString(const QTextCursor &cursor) const
+{
+    return isInStringHelper(cursor);
+}
+
 QString CppAutoCompleter::insertMatchingBrace(const QTextCursor &cursor,
                                                 const QString &text,
                                                 QChar la,
@@ -143,4 +148,35 @@ const Token CppAutoCompleter::tokenAtPosition(const QList<Token> &tokens, const 
             return tk;
     }
     return Token();
+}
+
+bool CppAutoCompleter::isInStringHelper(const QTextCursor &cursor, Token *retToken) const
+{
+    LanguageFeatures features;
+    features.qtEnabled = false;
+    features.qtKeywordsEnabled = false;
+    features.qtMocRunEnabled = false;
+    features.cxx11Enabled = true;
+    features.c99Enabled = true;
+
+    SimpleLexer tokenize;
+    tokenize.setLanguageFeatures(features);
+
+    const int prevState = BackwardsScanner::previousBlockState(cursor.block()) & 0xFF;
+    const QList<Token> tokens = tokenize(cursor.block().text(), prevState);
+
+    const unsigned pos = cursor.selectionEnd() - cursor.block().position();
+
+    if (tokens.isEmpty() || pos < tokens.first().utf16charsBegin())
+        return prevState > 0;
+
+    if (pos >= tokens.last().utf16charsEnd()) {
+        const Token tk = tokens.last();
+        return tk.isStringLiteral() && prevState > 0;
+    }
+
+    Token tk = tokenAtPosition(tokens, pos);
+    if (retToken)
+        *retToken = tk;
+    return tk.isStringLiteral();
 }

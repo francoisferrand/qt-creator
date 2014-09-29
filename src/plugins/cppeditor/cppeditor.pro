@@ -34,7 +34,8 @@ HEADERS += \
     cppsnippetprovider.h \
     cpptypehierarchy.h \
     cppvirtualfunctionassistprovider.h \
-    cppvirtualfunctionproposalitem.h
+    cppvirtualfunctionproposalitem.h \
+    cppstringsplitter.h
 
 SOURCES += \
     cppautocompleter.cpp \
@@ -66,7 +67,8 @@ SOURCES += \
     cppsnippetprovider.cpp \
     cpptypehierarchy.cpp \
     cppvirtualfunctionassistprovider.cpp \
-    cppvirtualfunctionproposalitem.cpp
+    cppvirtualfunctionproposalitem.cpp \
+    cppstringsplitter.cpp
 
 FORMS += \
     cpppreprocessordialog.ui \

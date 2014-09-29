@@ -48,6 +48,7 @@ public:
                                               const QString &textToInsert = QString()) const;
     virtual bool contextAllowsElectricCharacters(const QTextCursor &cursor) const;
     virtual bool isInComment(const QTextCursor &cursor) const;
+    virtual bool isInString(const QTextCursor &cursor) const;
     virtual QString insertMatchingBrace(const QTextCursor &cursor,
                                         const QString &text,
                                         QChar la,
@@ -56,6 +57,7 @@ public:
 
 private:
     bool isInCommentHelper(const QTextCursor &cursor, CPlusPlus::Token *retToken = 0) const;
+    bool isInStringHelper(const QTextCursor &cursor, CPlusPlus::Token *retToken = 0) const;
     const CPlusPlus::Token tokenAtPosition(const QList<CPlusPlus::Token> &tokens, const unsigned pos) const;
 };
 

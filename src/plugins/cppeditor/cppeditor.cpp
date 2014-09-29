@@ -41,6 +41,7 @@
 #include "cpplocalrenaming.h"
 #include "cpppreprocessordialog.h"
 #include "cppquickfixassistant.h"
+#include "cppstringsplitter.h"
 
 #include <coreplugin/actionmanager/actioncontainer.h>
 #include <coreplugin/actionmanager/actionmanager.h>
@@ -133,6 +134,7 @@ public:
     CppEditorOutline *m_cppEditorOutline;
 
     CppDocumentationCommentHelper m_cppDocumentationCommentHelper;
+    CppStringSplitter m_cppStringSplitter;
 
     QTimer *m_updateUsesTimer;
     QTimer *m_updateFunctionDeclDefLinkTimer;
@@ -163,6 +165,7 @@ CPPEditorWidgetPrivate::CPPEditorWidgetPrivate(CPPEditorWidget *q)
     , m_cppEditorDocument(qobject_cast<CPPEditorDocument *>(q->baseTextDocument()))
     , m_cppEditorOutline(new CppEditorOutline(q))
     , m_cppDocumentationCommentHelper(q)
+    , m_cppStringSplitter(q)
     , m_localRenaming(q)
     , m_highlightRevision(0)
     , m_referencesRevision(0)
@@ -783,6 +786,9 @@ void CPPEditorWidget::contextMenuEvent(QContextMenuEvent *e)
 void CPPEditorWidget::keyPressEvent(QKeyEvent *e)
 {
     if (d->m_localRenaming.handleKeyPressEvent(e))
+        return;
+
+    if (d->m_cppStringSplitter.handleKeyPressEvent(e))
         return;
 
     if (d->m_cppDocumentationCommentHelper.handleKeyPressEvent(e))

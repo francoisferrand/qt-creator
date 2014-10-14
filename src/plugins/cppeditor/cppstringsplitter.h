@@ -42,23 +42,18 @@ class BaseTextEditorWidget;
 namespace CppEditor {
 namespace Internal {
 
-class CppStringSplitter: public QObject
+class CppStringSplitter
 {
-    Q_OBJECT
     Q_DISABLE_COPY(CppStringSplitter)
 
 public:
     explicit CppStringSplitter(TextEditor::BaseTextEditorWidget *editorWidget);
     bool handleKeyPressEvent(QKeyEvent *e) const;
 
-protected slots:
-    void onCompletionSettingsChanged(const TextEditor::CompletionSettings &settings);
-
 private:
     CppStringSplitter();
 
     TextEditor::BaseTextEditorWidget *m_editorWidget;
-    TextEditor::CompletionSettings m_settings;
 };
 
 } // namespace Internal

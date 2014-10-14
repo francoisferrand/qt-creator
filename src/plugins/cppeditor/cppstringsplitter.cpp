@@ -38,18 +38,12 @@ namespace CppEditor {
 namespace Internal {
 
 CppStringSplitter::CppStringSplitter(TextEditor::BaseTextEditorWidget *editorWidget)
-    : m_editorWidget(editorWidget),
-      m_settings(TextEditor::TextEditorSettings::instance()->completionSettings())
-{
-    connect(TextEditor::TextEditorSettings::instance(),
-            &TextEditor::TextEditorSettings::completionSettingsChanged,
-            this,
-            &CppStringSplitter::onCompletionSettingsChanged);
-}
+    : m_editorWidget(editorWidget)
+{}
 
 bool CppStringSplitter::handleKeyPressEvent(QKeyEvent *e) const
 {
-    if (!m_settings.m_autoSplitStrings)
+    if (!TextEditor::TextEditorSettings::completionSettings().m_autoSplitStrings)
         return false;
 
     if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Enter) {
@@ -76,11 +70,6 @@ bool CppStringSplitter::handleKeyPressEvent(QKeyEvent *e) const
     }
 
     return false;
-}
-
-void CppStringSplitter::onCompletionSettingsChanged(const TextEditor::CompletionSettings &settings)
-{
-    m_settings = settings;
 }
 
 } // namespace Internal

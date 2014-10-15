@@ -95,6 +95,7 @@ void SearchResultTreeView::setTabWidth(int tabWidth)
 {
     SearchResultTreeItemDelegate *delegate = static_cast<SearchResultTreeItemDelegate *>(itemDelegate());
     delegate->setTabWidth(tabWidth);
+    update();
 }
 
 SearchResultTreeModel *SearchResultTreeView::model() const

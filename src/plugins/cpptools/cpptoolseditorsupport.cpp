@@ -430,8 +430,8 @@ void CppEditorSupport::onDiagnosticsChanged()
 
         QTextCursor c(doc->findBlockByNumber(m.line() - 1));
         const QString text = c.block().text();
-        if (m.length() > 0 && m.column() + m.length() < (unsigned)text.size()) {
-            int column = m.column() > 0 ? m.column() - 1 : 0;
+        int column = m.column() > 0 ? m.column() - 1 : 0;
+        if (m.length() > 0 && column + m.length() <= (unsigned)text.size()) {
             c.setPosition(c.position() + column);
             c.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, m.length());
         } else {

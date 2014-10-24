@@ -75,6 +75,8 @@ private slots:
     void literals_data();
     void preprocessor();
     void preprocessor_data();
+    void trigraph();
+    void trigraph_data();
 
     void bytes_and_utf16chars();
     void bytes_and_utf16chars_data();
@@ -723,6 +725,44 @@ void tst_SimpleLexer::incremental_data()
     QTest::newRow("escaped_cpp_comment_with_space_and_newline_2")
             << _("bar")
             << (TokenKindList() << T_IDENTIFIER);
+}
+
+void tst_SimpleLexer::trigraph()
+{
+    QFETCH(QByteArray, source);
+    QFETCH(TokenKindList, expectedTokenKindList);
+
+    run(source, toTokens(expectedTokenKindList), false, CompareKind, true);
+}
+
+void tst_SimpleLexer::trigraph_data()
+{
+    QTest::addColumn<QByteArray>("source");
+    QTest::addColumn<TokenKindList>("expectedTokenKindList");
+
+    QTest::newRow("pound_trigraph") << _("jj=").replace('j', '?') << (TokenKindList() << T_POUND);
+
+    QTest::newRow("caret_trigraph") << _("jj'").replace('j', '?') << (TokenKindList() << T_CARET);
+
+    QTest::newRow("left_bracket_trigraph") << _("jj(").replace('j', '?') << (TokenKindList() << T_LBRACKET);
+
+    QTest::newRow("right_bracket_trigraph") << _("jj)").replace('j', '?') << (TokenKindList() << T_RBRACKET);
+
+    QTest::newRow("pipe_trigraph") << _("jj!").replace('j', '?') << (TokenKindList() << T_PIPE);
+
+    QTest::newRow("left_brace_trigraph") << _("jj<").replace('j', '?') << (TokenKindList() << T_LBRACE);
+
+    QTest::newRow("right_brace_trigraph") << _("jj>").replace('j', '?') << (TokenKindList() << T_RBRACE);
+
+    QTest::newRow("tilde_trigraph") << _("jj-").replace('j', '?') << (TokenKindList() << T_TILDE);
+
+    QTest::newRow("pound_pound_trigraph") << _("jj=jj=").replace('j', '?') << (TokenKindList() << T_POUND_POUND);
+
+    QTest::newRow("caret_equal_trigraph") << _("jj'=").replace('j', '?') << (TokenKindList() << T_CARET_EQUAL);
+
+    QTest::newRow("pipe_equal_trigraph") << _("jj!=").replace('j', '?') << (TokenKindList() << T_PIPE_EQUAL);
+
+    QTest::newRow("tilde_equal_trigraph") << _("jj-=").replace('j', '?') << (TokenKindList() << T_TILDE_EQUAL);
 }
 
 QTEST_APPLESS_MAIN(tst_SimpleLexer)

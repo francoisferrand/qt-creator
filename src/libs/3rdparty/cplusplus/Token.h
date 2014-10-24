@@ -363,8 +363,10 @@ public:
         // Tokens '1', '+', '2', and ';' are all expanded. However only tokens '+' and ';'
         // are generated.
         unsigned generated     : 1;
+        // Indicates the token is a digraph or a trigraph
+        unsigned digraph       : 1;
         // Unused...
-        unsigned pad           : 3;
+        unsigned pad           : 2;
         // The token length in bytes and UTF16 chars.
         unsigned bytes         : 16;
         unsigned utf16chars    : 16;

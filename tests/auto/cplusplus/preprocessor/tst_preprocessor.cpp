@@ -409,6 +409,7 @@ private slots:
     void undef();
     void concat();
     void excessive_nesting();
+    void trigraph();
 };
 
 // Remove all #... lines, and 'simplify' string, to allow easily comparing the result
@@ -2074,6 +2075,25 @@ void tst_Preprocessor::compare_input_output(bool keepComments)
     preprocess.setKeepComments(keepComments);
     QByteArray prep = preprocess.run(QLatin1String("<stdin>"), input);
     QVERIFY(compare(prep, output));
+}
+
+void tst_Preprocessor::trigraph()
+{
+    Environment env;
+    Preprocessor preprocess(0, &env);
+
+    //Trigraphs in source code are replaced
+    QByteArray prep = preprocess.run(QLatin1String("<stdin>"),
+                                     "??""(  ??"")  ??""<  ??"">  ??""=  ??""=??""=  ??""'  ??""'=  ??""!  ??""!=  ??""-  ??""-=",
+                                     true, false);
+    QCOMPARE(prep.constData(), "[  ]  {  }  #  ##  ^  ^=  |  |=  ~  ~=");
+
+    //Trigraphs that appear after macro expansion are not replaced
+    prep = preprocess.run(QLatin1String("<stdin>"),
+                          "#define TRIGRAPH(x...) ? ## ? ## x ## =\n"
+                          "TRIGRAPH()",
+                          true, false);
+    QCOMPARE(prep.constData(), "\n??""=");
 }
 
 QTEST_APPLESS_MAIN(tst_Preprocessor)

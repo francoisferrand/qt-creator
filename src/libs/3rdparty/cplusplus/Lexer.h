@@ -53,6 +53,9 @@ public:
     bool scanAngleStringLiteralTokens() const;
     void setScanAngleStringLiteralTokens(bool onoff);
 
+    bool ignoreTrigraph() const;
+    void setIgnoreDigraph(bool onoff);
+
     void setStartWithNewline(bool enabled);
 
     int state() const;
@@ -125,6 +128,7 @@ private:
         unsigned _scanKeywords: 1;
         unsigned _scanAngleStringLiteralTokens: 1;
         unsigned _ppMode: 1;
+        unsigned _ignoreTrigraph : 1;
     };
 
     struct State {

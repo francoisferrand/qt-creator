@@ -55,6 +55,7 @@
 #include <cplusplus/Token.h>
 #include <cplusplus/Literals.h>
 
+#include <utils/qtcassert.h>
 #include <utils/scopedswap.h>
 
 #include <QDebug>
@@ -1443,7 +1444,25 @@ void Preprocessor::preprocess(const QString &fileName, const QByteArray &source,
         enforceSpacing(tk, macroExpanded);
 
         // Finally output the token.
-        currentOutputBuffer().append(tk.tokenStart(), tk.bytes());
+        if (!tk.f.digraph) {
+            currentOutputBuffer().append(tk.tokenStart(), tk.bytes());
+        } else {
+            switch (tk.kind()) {
+            case T_LBRACKET:    currentOutputBuffer().append("["); break;
+            case T_RBRACKET:    currentOutputBuffer().append("]"); break;
+            case T_LBRACE:      currentOutputBuffer().append("{"); break;
+            case T_RBRACE:      currentOutputBuffer().append("}"); break;
+            case T_POUND:       currentOutputBuffer().append("#"); break;
+            case T_POUND_POUND: currentOutputBuffer().append("##"); break;
+            case T_CARET:       currentOutputBuffer().append("^"); break;
+            case T_CARET_EQUAL: currentOutputBuffer().append("^="); break;
+            case T_PIPE:        currentOutputBuffer().append("|"); break;
+            case T_PIPE_EQUAL:  currentOutputBuffer().append("|="); break;
+            case T_TILDE:       currentOutputBuffer().append("~"); break;
+            case T_TILDE_EQUAL: currentOutputBuffer().append("~="); break;
+            default: QTC_ASSERT(0, qDebug() << tk.spell()); break;
+            }
+        }
 
     } while (tk.isNot(T_EOF_SYMBOL));
 

@@ -142,6 +142,7 @@ void TranslationUnit::tokenize()
     Lexer lex(this);
     lex.setLanguageFeatures(_languageFeatures);
     lex.setScanCommentTokens(true);
+    lex.setIgnoreDigraph(true); // digraphs and trigraphs should be ignored now, they should have been removed by preprocessor already
 
     std::stack<unsigned> braces;
     _tokens->push_back(nullToken); // the first token needs to be invalid!

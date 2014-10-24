@@ -119,6 +119,12 @@ void Lexer::setScanKeywords(bool onoff)
 void Lexer::setScanAngleStringLiteralTokens(bool onoff)
 { f._scanAngleStringLiteralTokens = onoff; }
 
+bool Lexer::ignoreDigraph() const
+{ return f._ignoreDigraph; }
+
+void Lexer::setIgnoreDigraph(bool onoff)
+{ f._ignoreDigraph = onoff; }
+
 void Lexer::pushLineStartOffset()
 {
     ++_currentLine;
@@ -283,9 +289,10 @@ void Lexer::scan_helper(Token *tok)
         if (_yychar == ':') {
             yyinp();
             tok->f.kind = T_COLON_COLON;
-        } else if (_yychar == '>') {
+        } else if (_yychar == '>' && !f._ignoreDigraph) {
             yyinp();
             tok->f.kind = T_RBRACKET;
+            tok->f.digraph = true;
         } else {
             tok->f.kind = T_COLON;
         }
@@ -329,20 +336,55 @@ void Lexer::scan_helper(Token *tok)
         break;
 
     case '?':
-        if (_yychar == '?') {
+        if (_yychar == '?' && !f._ignoreDigraph) {
             yyinp();
             if (_yychar == '(') {
                 yyinp();
                 tok->f.kind = T_LBRACKET;
+                tok->f.digraph = true;
             } else if (_yychar == ')') {
                 yyinp();
                 tok->f.kind = T_RBRACKET;
+                tok->f.digraph = true;
             } else if (_yychar == '<') {
                 yyinp();
                 tok->f.kind = T_LBRACE;
+                tok->f.digraph = true;
             } else if (_yychar == '>') {
                 yyinp();
                 tok->f.kind = T_RBRACE;
+                tok->f.digraph = true;
+            } else if (_yychar == '=') {
+                yyinp();
+                tok->f.kind = T_POUND;
+                tok->f.digraph = true;
+            } else if (_yychar == '\'') {
+                yyinp();
+                if (_yychar == '=') {
+                    yyinp();
+                    tok->f.kind = T_CARET_EQUAL;
+                } else {
+                    tok->f.kind = T_CARET;
+                }
+                tok->f.digraph = true;
+            } else if (_yychar == '!') {
+                yyinp();
+                if (_yychar == '=') {
+                    yyinp();
+                    tok->f.kind = T_PIPE_EQUAL;
+                } else {
+                    tok->f.kind = T_PIPE;
+                }
+                tok->f.digraph = true;
+            } else if (_yychar == '-') {
+                yyinp();
+                if (_yychar == '=') {
+                    yyinp();
+                    tok->f.kind = T_TILDE_EQUAL;
+                } else {
+                    tok->f.kind = T_TILDE;
+                }
+                tok->f.digraph = true;
             }
         } else {
             tok->f.kind = T_QUESTION;
@@ -461,12 +503,14 @@ void Lexer::scan_helper(Token *tok)
         if (_yychar == '=') {
             yyinp();
             tok->f.kind = T_PERCENT_EQUAL;
-        } else if (_yychar == '>') {
+        } else if (_yychar == '>' && !f._ignoreDigraph) {
             yyinp();
             tok->f.kind = T_RBRACE;
-        } else if (_yychar == ':') {
+            tok->f.digraph = true;
+        } else if (_yychar == ':' && !f._ignoreDigraph) {
             yyinp();
             tok->f.kind = T_POUND;
+            tok->f.digraph = true;
         } else {
             tok->f.kind = T_PERCENT;
         }
@@ -554,12 +598,14 @@ void Lexer::scan_helper(Token *tok)
         } else if (_yychar == '=') {
             yyinp();
             tok->f.kind = T_LESS_EQUAL;
-        } else if (_yychar == ':') {
+        } else if (_yychar == ':' && !f._ignoreDigraph) {
             yyinp();
             tok->f.kind = T_LBRACKET;
-        } else if (_yychar == '%') {
+            tok->f.digraph = true;
+        } else if (_yychar == '%' && !f._ignoreDigraph) {
             yyinp();
             tok->f.kind = T_LBRACE;
+            tok->f.digraph = true;
         } else {
             tok->f.kind = T_LESS;
         }

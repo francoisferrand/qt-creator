@@ -266,8 +266,8 @@ void Lexer::scan_helper(Token *tok)
 
     case '#':
         if (_yychar == '#') {
-            tok->f.kind = T_POUND_POUND;
             yyinp();
+            tok->f.kind = T_POUND_POUND;
         } else {
             tok->f.kind = T_POUND;
         }
@@ -518,7 +518,13 @@ void Lexer::scan_helper(Token *tok)
             tok->f.kind = T_RBRACE;
         } else if (_yychar == ':') {
             yyinp();
-            tok->f.kind = T_POUND;
+            if (_yychar == '%' && *(_currentChar + 1) == ':') {
+                yyinp();
+                yyinp();
+                tok->f.kind = T_POUND_POUND;
+            } else {
+                tok->f.kind = T_POUND;
+            }
         } else {
             tok->f.kind = T_PERCENT;
         }

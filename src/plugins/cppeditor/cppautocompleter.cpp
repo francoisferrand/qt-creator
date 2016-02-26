@@ -52,6 +52,7 @@ static bool isInCommentHelper(const QTextCursor &cursor, Token *retToken = 0)
     features.qtKeywordsEnabled = false;
     features.qtMocRunEnabled = false;
     features.cxx11Enabled = true;
+    features.cxxEnabled = true;
     features.c99Enabled = true;
 
     SimpleLexer tokenize;
@@ -87,6 +88,7 @@ static bool isInStringHelper(const QTextCursor &cursor, Token *retToken = 0)
     features.qtKeywordsEnabled = false;
     features.qtMocRunEnabled = false;
     features.cxx11Enabled = true;
+    features.cxxEnabled = true;
     features.c99Enabled = true;
 
     SimpleLexer tokenize;

@@ -495,6 +495,7 @@ void tst_SimpleLexer::user_defined_literals()
     const TokenCompareFlags compareFlags = CompareKind | CompareBytes | CompareUtf16Chars | CompareUserDefinedLiteral;
     LanguageFeatures languageFeatures;
     languageFeatures.cxx11Enabled = true;
+    languageFeatures.cxxEnabled = true;
     run(source, expectedTokens, false, compareFlags, false, languageFeatures);
 }
 
@@ -547,7 +548,10 @@ void tst_SimpleLexer::offsets()
             | CompareUtf16CharsBegin
             | CompareUtf16CharsEnd
             ;
-    run(source, expectedTokens, false, compareFlags);
+
+    LanguageFeatures languageFeatures;
+    languageFeatures.cxxEnabled = true;
+    run(source, expectedTokens, false, compareFlags, false, languageFeatures);
 }
 
 void tst_SimpleLexer::offsets_data()

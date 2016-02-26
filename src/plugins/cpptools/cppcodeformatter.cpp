@@ -1071,6 +1071,7 @@ int CodeFormatter::tokenizeBlock(const QTextBlock &block, bool *endedJoined)
     features.qtEnabled = true;
     features.qtMocRunEnabled = true;
     features.qtKeywordsEnabled = true;
+    features.cxxEnabled = true;
     features.objCEnabled = true;
 
     SimpleLexer tokenize;

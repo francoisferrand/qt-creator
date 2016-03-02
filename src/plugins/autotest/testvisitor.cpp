@@ -417,7 +417,7 @@ bool GTestVisitor::visit(CPlusPlus::FunctionDefinitionAST *ast)
         locationAndType.m_state = disabled ? GoogleTestTreeItem::Disabled
                                            : GoogleTestTreeItem::Enabled;
         GTestCaseSpec spec;
-        spec.testCaseName = testCaseName;
+        spec.testCaseName = disabled ? testCaseName.mid(9) : testCaseName;
         spec.parameterized = TestUtils::isGTestParameterized(prettyName);
         spec.typed = TestUtils::isGTestTyped(prettyName);
         spec.disabled = disabledCase;

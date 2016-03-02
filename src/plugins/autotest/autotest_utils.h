@@ -34,6 +34,14 @@ namespace Internal {
 class TestUtils
 {
 public:
+    static bool isCrpcutTestMacro(const QString &macro)
+    {
+        static QStringList valid = {
+            QStringLiteral("TEST"), QStringLiteral("DISABLED_TEST")
+        };
+        return valid.contains(macro);
+    }
+
     static bool isGTestMacro(const QString &macro)
     {
         static QStringList valid = {

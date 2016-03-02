@@ -50,6 +50,7 @@ QString TestResultDelegate::outputString(const TestResult &testResult, bool sele
     switch (testResult.result()) {
     case Result::Pass:
     case Result::Fail:
+    case Result::Skip:
     case Result::ExpectedFail:
     case Result::UnexpectedPass:
     case Result::BlacklistedFail:

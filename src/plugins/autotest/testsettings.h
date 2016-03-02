@@ -63,6 +63,10 @@ struct TestSettings
     bool gtestRunDisabled;
     bool gtestShuffle;
     bool gtestRepeat;
+    int crpcupThreadCount;
+    bool crpcupBacktraceHeap;
+    int crpcupTimeoutMultiplier;
+    bool crpcupDisableTimeout;
 };
 
 inline bool operator==(const TestSettings &s1, const TestSettings &s2) { return s1.equals(s2); }

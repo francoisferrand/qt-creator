@@ -49,7 +49,8 @@ public:
         Invalid,
         AutoTest,
         QuickTest,
-        GoogleTest
+        GoogleTest,
+        CrpcutTest
     };
 
     static TestTreeModel* instance();
@@ -110,6 +111,7 @@ private:
     AutoTestTreeItem *m_autoTestRootItem;
     QuickTestTreeItem *m_quickTestRootItem;
     GoogleTestTreeItem *m_googleTestRootItem;
+    GoogleTestTreeItem *m_crpcutTestRootItem;
     TestCodeParser *m_parser;
     bool m_connectionsInitialized;
     QAtomicInt m_refCounter;

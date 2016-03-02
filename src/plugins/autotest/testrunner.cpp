@@ -153,6 +153,10 @@ static void performTestRun(QFutureInterface<TestResultPtr> &futureInterface,
             outputReader.reset(new GTestOutputReader(futureInterface, &testProcess,
                                                      testConfiguration->buildDirectory()));
             break;
+        case TestTypeCrpcut:
+            outputReader.reset(new CrpcutOutputReader(futureInterface, &testProcess,
+                                                      testConfiguration->buildDirectory()));
+            break;
         }
         if (futureInterface.isCanceled())
             break;
@@ -177,7 +181,7 @@ static void performTestRun(QFutureInterface<TestResultPtr> &futureInterface,
             if (testConfiguration->testCases().count())
                 argumentList << testConfiguration->testCases();
             testProcess.setArguments(argumentList);
-        } else { // TestTypeGTest
+        } else if (testConfiguration->testType() == TestTypeGTest) {
             QStringList argumentList;
             const QStringList &testSets = testConfiguration->testCases();
             if (testSets.size()) {
@@ -192,6 +196,22 @@ static void performTestRun(QFutureInterface<TestResultPtr> &futureInterface,
                 argumentList << QLatin1String("--gtest_shuffle");
                 argumentList << QString::fromLatin1("--gtest_random_seed=%1").arg(settings.gtestSeed);
             }
+            testProcess.setArguments(argumentList);
+        } else { // TestTypeCrpcut
+            QStringList argumentList = {
+                QLatin1String("-x"),
+                QLatin1String("-v")
+            };
+            if (settings.crpcupThreadCount > 1)
+                argumentList << QLatin1String("-c") << QString::number(settings.crpcupThreadCount);
+            if (settings.crpcupDisableTimeout) {
+                argumentList << QLatin1String("-t");
+            } else if (settings.crpcupTimeoutMultiplier > 1) {
+                argumentList << QString::fromLatin1("--timeout-multiplier=%1")
+                                .arg(settings.crpcupTimeoutMultiplier);
+            }
+            if (testConfiguration->testCases().count())
+                argumentList << testConfiguration->testCases();
             testProcess.setArguments(argumentList);
         }
 

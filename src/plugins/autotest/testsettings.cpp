@@ -26,6 +26,7 @@
 #include "testsettings.h"
 
 #include <QSettings>
+#include <QThread>
 
 namespace Autotest {
 namespace Internal {
@@ -43,6 +44,10 @@ static const char gtestRepeatKey[] = "RepeatGTests";
 static const char gtestShuffleKey[] = "ShuffleGTests";
 static const char gtestIterationsKey[] = "IterationsGTests";
 static const char gtestSeedKey[] = "SeedGTests";
+static const char crpcupThreadCountKey[] = "ThreadCountCrpcut";
+static const char crpcupBacktraceHeapKey[] = "BacktraceHeapKeyCrpcut";
+static const char crpcupTimeoutMultiplierKey[] = "TimeoutMultiplierKeyCrpcut";
+static const char crpcupDisableTimeoutKey[] = "DisableTimeoutKeyCrpcut";
 static const int defaultTimeout = 60000;
 
 TestSettings::TestSettings()
@@ -66,6 +71,10 @@ void TestSettings::toSettings(QSettings *s) const
     s->setValue(QLatin1String(gtestShuffleKey), gtestShuffle);
     s->setValue(QLatin1String(gtestIterationsKey), gtestIterations);
     s->setValue(QLatin1String(gtestSeedKey), gtestSeed);
+    s->setValue(QLatin1String(crpcupThreadCountKey), crpcupThreadCount);
+    s->setValue(QLatin1String(crpcupBacktraceHeapKey), crpcupBacktraceHeap);
+    s->setValue(QLatin1String(crpcupTimeoutMultiplierKey), crpcupTimeoutMultiplier);
+    s->setValue(QLatin1String(crpcupDisableTimeoutKey), crpcupDisableTimeout);
     s->endGroup();
 }
 
@@ -102,6 +111,11 @@ void TestSettings::fromSettings(const QSettings *s)
     gtestShuffle = s->value(root + QLatin1String(gtestShuffleKey), false).toBool();
     gtestIterations = s->value(root + QLatin1String(gtestIterationsKey), 1).toInt();
     gtestSeed = s->value(root + QLatin1String(gtestSeedKey), 0).toInt();
+    crpcupThreadCount = s->value(root + QLatin1String(crpcupThreadCountKey),
+                                 QThread::idealThreadCount()).toInt();
+    crpcupBacktraceHeap = s->value(root + QLatin1String(crpcupBacktraceHeapKey), false).toBool();
+    crpcupTimeoutMultiplier = s->value(root + QLatin1String(crpcupTimeoutMultiplierKey), 1).toInt();
+    crpcupDisableTimeout = s->value(root + QLatin1String(crpcupDisableTimeoutKey), false).toBool();
 }
 
 bool TestSettings::equals(const TestSettings &rhs) const
@@ -114,7 +128,11 @@ bool TestSettings::equals(const TestSettings &rhs) const
             && alwaysParse == rhs.alwaysParse
             && gtestRunDisabled == rhs.gtestRunDisabled
             && gtestRepeat == rhs.gtestRepeat && gtestIterations == rhs.gtestIterations
-            && gtestShuffle == rhs.gtestShuffle && gtestSeed == rhs.gtestSeed;
+            && gtestShuffle == rhs.gtestShuffle && gtestSeed == rhs.gtestSeed
+            && crpcupThreadCount == rhs.crpcupThreadCount
+            && crpcupBacktraceHeap == rhs.crpcupBacktraceHeap
+            && crpcupTimeoutMultiplier == rhs.crpcupTimeoutMultiplier
+            && crpcupDisableTimeout == rhs.crpcupDisableTimeout;
 }
 
 QString TestSettings::metricsTypeToOption(const MetricsType type)

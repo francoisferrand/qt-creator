@@ -104,6 +104,38 @@ private:
     int m_iteration = 0;
 };
 
+class CrpcutOutputReader : public TestOutputReader
+{
+public:
+    CrpcutOutputReader(const QFutureInterface<TestResultPtr> &futureInterface,
+                       QProcess *testApplication, const QString &buildDirectory);
+
+protected:
+    void processOutput() override;
+
+private:
+    QString formattedDuration() const;
+
+    enum ParserState {
+        State_Idle,
+        State_Document,
+        State_Test,
+        State_Log,
+        State_LogErr,
+        State_Violation,
+        State_Disabled
+    };
+    ParserState m_parserState;
+    QString m_testCase;
+    Result::Type m_result;
+    long long m_duration;
+    QString m_file;
+    int     m_lineNumber;
+    QString m_description;
+    int     m_disabledTestsCount;
+
+    QXmlStreamReader m_xmlReader;
+};
 
 } // namespace Internal
 } // namespace Autotest

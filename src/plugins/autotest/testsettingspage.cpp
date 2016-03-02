@@ -44,6 +44,7 @@ TestSettingsWidget::TestSettingsWidget(QWidget *parent)
 
     connect(m_ui.repeatGTestsCB, &QCheckBox::toggled, m_ui.repetitionSpin, &QSpinBox::setEnabled);
     connect(m_ui.shuffleGTestsCB, &QCheckBox::toggled, m_ui.seedSpin, &QSpinBox::setEnabled);
+    connect(m_ui.enableTimeoutCB, &QCheckBox::toggled, m_ui.timeoutMultiplierSpin, &QSpinBox::setDisabled);
 }
 
 void TestSettingsWidget::setSettings(const TestSettings &settings)
@@ -59,6 +60,10 @@ void TestSettingsWidget::setSettings(const TestSettings &settings)
     m_ui.shuffleGTestsCB->setChecked(settings.gtestShuffle);
     m_ui.repetitionSpin->setValue(settings.gtestIterations);
     m_ui.seedSpin->setValue(settings.gtestSeed);
+    m_ui.threadCountSpin->setValue(settings.crpcupThreadCount);
+    m_ui.backtraceHeapCB->setChecked(settings.crpcupBacktraceHeap);
+    m_ui.enableTimeoutCB->setChecked(!settings.crpcupDisableTimeout);
+    m_ui.timeoutMultiplierSpin->setValue(settings.crpcupTimeoutMultiplier);
 
     switch (settings.metrics) {
     case MetricsType::Walltime:
@@ -95,6 +100,10 @@ TestSettings TestSettingsWidget::settings() const
     result.gtestShuffle = m_ui.shuffleGTestsCB->isChecked();
     result.gtestIterations = m_ui.repetitionSpin->value();
     result.gtestSeed = m_ui.seedSpin->value();
+    result.crpcupThreadCount = m_ui.threadCountSpin->value();
+    result.crpcupBacktraceHeap = m_ui.backtraceHeapCB->isChecked();
+    result.crpcupTimeoutMultiplier = m_ui.timeoutMultiplierSpin->value();
+    result.crpcupDisableTimeout = !m_ui.enableTimeoutCB->isChecked();
 
     if (m_ui.walltimeRB->isChecked())
         result.metrics = MetricsType::Walltime;

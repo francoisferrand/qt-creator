@@ -416,8 +416,7 @@ QVariant GoogleTestTreeItem::data(int column, int role) const
         if (type() == TestTreeItem::Root)
             return TestTreeItem::data(column, role);
 
-        const QString &displayName = (m_state & GoogleTestTreeItem::Disabled)
-                ? name().mid(9) : name();
+        const QString &displayName = name();
         return QVariant(displayName + nameSuffix());
     }
     case StateRole:

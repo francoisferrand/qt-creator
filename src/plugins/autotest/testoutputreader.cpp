@@ -435,5 +435,186 @@ void GTestOutputReader::processOutput()
     }
 }
 
+CrpcutOutputReader::CrpcutOutputReader(const QFutureInterface<TestResultPtr> &futureInterface,
+                                       QProcess *testApplication, const QString &buildDirectory)
+    : TestOutputReader(futureInterface, testApplication, buildDirectory)
+    , m_parserState(State_Idle),
+      m_result(Result::Invalid),
+      m_duration(0),
+      m_lineNumber(0),
+      m_disabledTestsCount(0)
+{
+}
+
+void CrpcutOutputReader::processOutput()
+{
+    if (!m_testApplication || m_testApplication->state() != QProcess::Running)
+        return;
+
+    while (m_testApplication->canReadLine()) {
+        m_xmlReader.addData(m_testApplication->readLine());
+        while (!m_xmlReader.atEnd()) {
+            if (m_futureInterface.isCanceled())
+                return;
+            switch (m_xmlReader.readNext()) {
+            case QXmlStreamReader::StartElement:
+                if (m_parserState == State_Idle
+                        && m_xmlReader.name() == QStringLiteral("test")) {
+                    m_testCase = m_xmlReader.attributes().value(QStringLiteral("name")).toString();
+                    m_duration = m_xmlReader.attributes().value(QStringLiteral("duration_us"))
+                                                         .toString().toLongLong();
+                    const QStringRef result = m_xmlReader.attributes().value(QStringLiteral("result"));
+                    m_result = result == QStringLiteral("PASSED") ? Result::Pass : Result::Fail;
+
+                    TestResultPtr testResult = TestResultPtr(new GTestResult());
+                    testResult->setResult(Result::MessageCurrentTest);
+                    testResult->setDescription(tr("Entering test function %1").arg(m_testCase));
+                    m_futureInterface.reportResult(testResult);
+
+                    testResult = TestResultPtr(new GTestResult(m_testCase));
+                    testResult->setTestCase(m_testCase);
+                    testResult->setResult(m_result);
+                    testResult->setDescription(tr("Execution took %1.").arg(formattedDuration()));
+                    m_futureInterface.reportResult(testResult);
+                    m_parserState = State_Test;
+                } else if (m_parserState == State_Idle
+                           && m_xmlReader.name() == QStringLiteral("blocked_tests")) {
+                    m_parserState = State_Disabled;
+                } else if (m_parserState == State_Disabled
+                           && m_xmlReader.name() == QStringLiteral("test")) {
+                    m_disabledTestsCount++;
+
+                    m_testCase = m_xmlReader.attributes().value(QStringLiteral("name")).toString();
+                    const QStringRef importance = m_xmlReader.attributes().value(QStringLiteral("importance"));
+
+                    TestResultPtr testResult = TestResultPtr(new GTestResult());
+                    testResult->setResult(Result::MessageCurrentTest);
+                    testResult->setDescription(tr("Entering test function %1").arg(m_testCase));
+                    m_futureInterface.reportResult(testResult);
+
+                    testResult = TestResultPtr(new GTestResult(m_testCase));
+                    testResult->setTestCase(m_testCase);
+                    testResult->setResult(Result::Skip);
+                    testResult->setDescription(importance == QStringLiteral("disabled")
+                                               ? QStringLiteral("Test is disabled.")
+                                               : QStringLiteral("Test was blocked"));
+                    m_futureInterface.reportResult(testResult);
+
+                    m_futureInterface.setProgressValue(m_futureInterface.progressValue() + 1);
+                } else if (m_parserState == State_Test
+                           && m_xmlReader.name() == QStringLiteral("violation")) {
+                    QString location = m_xmlReader.attributes().value(QStringLiteral("location")).toString();
+                    static QRegExp filenameMatcher(QLatin1String("^(.*):([0-9]+)"));
+                    if (filenameMatcher.exactMatch(location)) {
+                        m_file = constructSourceFilePath(m_buildDir, filenameMatcher.cap(1));
+                        m_lineNumber = filenameMatcher.cap(2).toInt();
+                    }
+                    m_parserState = State_Violation;
+                } else if (m_parserState == State_Test
+                           && m_xmlReader.name() == QStringLiteral("stderr")) {
+                    m_parserState = State_LogErr;
+                } else if (m_parserState == State_Test
+                           && m_xmlReader.name() == QStringLiteral("stdout")) {
+                    m_parserState = State_Log;
+                }
+                break;
+
+            case QXmlStreamReader::EndElement:
+                if ((m_parserState == State_Test)
+                        && m_xmlReader.name() == QStringLiteral("test")) {
+                    if (m_duration) {
+                        TestResultPtr testResult = TestResultPtr(new GTestResult(m_testCase));
+                        testResult->setTestCase(m_testCase);
+                        testResult->setResult(Result::MessageInternal);
+                        testResult->setDescription(tr("Test execution took %1").arg(formattedDuration()));
+                        m_futureInterface.reportResult(testResult);
+                        m_duration = 0;
+                    }
+                    m_futureInterface.setProgressValue(m_futureInterface.progressValue() + 1);
+                    m_result = Result::Invalid;
+                    m_testCase.clear();
+                    m_parserState = State_Idle;
+                } else if (m_parserState == State_Disabled
+                           && m_xmlReader.name() == QStringLiteral("blocked_tests")) {
+
+                    TestResultPtr testResult = TestResultPtr(new GTestResult());
+                    testResult->setResult(Result::MessageDisabledTests);
+                    testResult->setDescription(tr("You have %n disabled test(s).", 0, m_disabledTestsCount));
+                    testResult->setLine(m_disabledTestsCount); // misuse line property to hold number of disabled
+                    m_futureInterface.reportResult(testResult);
+
+                    m_disabledTestsCount = 0;
+                    m_parserState = State_Idle;
+                } else if (m_parserState == State_Violation
+                           && m_xmlReader.name() == QStringLiteral("violation")) {
+                    TestResultPtr testResult = TestResultPtr(new QTestResult(m_testCase));
+                    testResult->setTestCase(m_testCase);
+                    testResult->setResult(Result::MessageFatal);
+                    testResult->setFileName(m_file);
+                    testResult->setLine(m_lineNumber);
+                    testResult->setDescription(m_description.trimmed());
+                    m_futureInterface.reportResult(testResult);
+                    m_description.clear();
+                    m_file.clear();
+                    m_lineNumber = 0;
+                    m_parserState = State_Test;
+                } else if (m_parserState == State_LogErr
+                           && m_xmlReader.name() == QStringLiteral("stderr")) {
+                    TestResultPtr testResult = TestResultPtr(new QTestResult(m_testCase));
+                    testResult->setTestCase(m_testCase);
+                    testResult->setResult(Result::MessageDebug);
+                    testResult->setDescription(m_description.trimmed());
+                    m_futureInterface.reportResult(testResult);
+                    m_description.clear();
+                    m_parserState = State_Test;
+                } else if (m_parserState == State_Log
+                           && m_xmlReader.name() == QStringLiteral("stdout")) {
+                    TestResultPtr testResult = TestResultPtr(new QTestResult(m_testCase));
+                    testResult->setTestCase(m_testCase);
+                    testResult->setResult(Result::MessageWarn);
+                    testResult->setDescription(m_description.trimmed());
+                    m_futureInterface.reportResult(testResult);
+                    m_description.clear();
+                    m_parserState = State_Test;
+                }
+                break;
+
+            case QXmlStreamReader::Characters:
+                if (m_parserState == State_Violation
+                        || m_parserState == State_Log
+                        || m_parserState == State_LogErr) {
+                    if (!m_description.isEmpty())
+                        m_description.append(QLatin1Char('\n'));
+                    m_description += m_xmlReader.text().toString();
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
+        if (m_xmlReader.error() != QXmlStreamReader::PrematureEndOfDocumentError
+                && m_parserState == State_Idle) {
+            // Reset parser if some malformed data is received. This may happen due to some code
+            // running before crpcut test runner
+            m_xmlReader.clear();
+        }
+    }
+}
+
+QString CrpcutOutputReader::formattedDuration() const
+{
+    QString res;
+    if (m_duration >= 10000000LL)      //More than 10s: show the seconds
+        res = QString::number((m_duration + 999999LL) / 1000000LL) + QLatin1String(" s");
+    else if (m_duration >= 1000000LL)  //Between 1s and 10s: show the seconds and 1/10th second
+        res = QString::number(((m_duration + 99999LL) / 100000LL) / 10.) + QLatin1String(" s");
+    else if (m_duration >= 10000LL)    //Between 10ms and 1s: show the milliseconds
+        res = QString::number((m_duration + 999LL) / 1000LL) + QLatin1String(" ms");
+    else                               //Less 10ms : show the milliseconds and 1/10th millisecond
+        res = QString::number(((m_duration + 99LL) / 100LL) / 10.) + QLatin1String(" ms");
+    return res;
+}
+
 } // namespace Internal
 } // namespace Autotest

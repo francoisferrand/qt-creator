@@ -50,12 +50,14 @@ TestTreeModel::TestTreeModel(QObject *parent) :
     m_autoTestRootItem(new AutoTestTreeItem(tr("Auto Tests"), QString(), TestTreeItem::Root)),
     m_quickTestRootItem(new QuickTestTreeItem(tr("Qt Quick Tests"), QString(), TestTreeItem::Root)),
     m_googleTestRootItem(new GoogleTestTreeItem(tr("Google Tests"), QString(), TestTreeItem::Root)),
+    m_crpcutTestRootItem(new GoogleTestTreeItem(tr("CrpCut Tests"), QString(), TestTreeItem::Root)),
     m_parser(new TestCodeParser(this)),
     m_connectionsInitialized(false)
 {
     rootItem()->appendChild(m_autoTestRootItem);
     rootItem()->appendChild(m_quickTestRootItem);
     rootItem()->appendChild(m_googleTestRootItem);
+    rootItem()->appendChild(m_crpcutTestRootItem);
 
     connect(m_parser, &TestCodeParser::aboutToPerformFullParse, this,
             &TestTreeModel::removeAllTestItems, Qt::QueuedConnection);
@@ -187,7 +189,7 @@ Qt::ItemFlags TestTreeModel::flags(const QModelIndex &index) const
 bool TestTreeModel::hasTests() const
 {
     return m_autoTestRootItem->childCount() > 0 || m_quickTestRootItem->childCount() > 0
-            || m_googleTestRootItem->childCount() > 0;
+            || m_googleTestRootItem->childCount() > 0 || m_crpcutTestRootItem->childCount() > 0;
 }
 
 static QString getCMakeDisplayNameIfNecessary(const QString &filePath, const QString &proFile)
@@ -313,6 +315,24 @@ QList<TestConfiguration *> TestTreeModel::getAllTestCases() const
             tc->setProject(project);
             result << tc;
         }
+    }
+
+    // get all Crpcut Tests
+    for (int row = 0, count = m_crpcutTestRootItem->childCount(); row < count; ++row) {
+        const TestTreeItem *child = m_crpcutTestRootItem->childItem(row);
+        for (int childRow = 0, childCount = child->childCount(); childRow < childCount; ++childRow) {
+            const QString &proFilePath = child->childItem(childRow)->proFile();
+            foundProFiles.insert(proFilePath, foundProFiles[proFilePath] + 1);
+        }
+    }
+
+    foreach (const QString &proFile, foundProFiles.keys()) {
+        TestConfiguration *tc = new TestConfiguration(QString(), QStringList(),
+                                                      foundProFiles.value(proFile));
+        tc->setProFile(proFile);
+        tc->setProject(project);
+        tc->setTestType(TestTypeCrpcut);
+        result << tc;
     }
 
     return result;
@@ -489,6 +509,53 @@ QList<TestConfiguration *> TestTreeModel::getSelectedTests() const
         }
     }
 
+    // get selected Crpcut Tests
+    proFilesWithCheckedTestSets.clear();
+    for (int row = 0, count = m_crpcutTestRootItem->childCount(); row < count; ++row) {
+        const auto child = m_crpcutTestRootItem->childItem(row)->asGoogleTestTreeItem();
+        if (child->checked() == Qt::Unchecked) // add this test name to disabled list ?
+            continue;
+
+        if (child->checked() == Qt::Checked) {
+            QSet<ProFileWithDisplayName> keys;
+            for (int grandChildRow = 0; grandChildRow < child->childCount(); ++grandChildRow) {
+                const TestTreeItem *grandChild = child->childItem(grandChildRow);
+                ProFileWithDisplayName key(grandChild->proFile(),
+                                           getCMakeDisplayNameIfNecessary(grandChild->filePath(),
+                                                                          grandChild->proFile()));
+                keys << key;
+            }
+            for (auto key: keys)
+                proFilesWithCheckedTestSets[key].append(child->name());
+            continue;
+        }
+
+        int grandChildCount = child->childCount();
+        for (int grandChildRow = 0; grandChildRow < grandChildCount; ++grandChildRow) {
+            const TestTreeItem *grandChild = child->childItem(grandChildRow);
+            if (grandChild->checked() == Qt::Checked) {
+                ProFileWithDisplayName key(grandChild->proFile(),
+                                           getCMakeDisplayNameIfNecessary(grandChild->filePath(),
+                                                                          grandChild->proFile()));
+
+                proFilesWithCheckedTestSets[key].append(
+                            child->name() + QLatin1Literal("::") + grandChild->name());
+            }
+        }
+    }
+
+    it = proFilesWithCheckedTestSets.begin();
+    end = proFilesWithCheckedTestSets.end();
+    for ( ; it != end; ++it) {
+        const ProFileWithDisplayName &key = it.key();
+        TestConfiguration *tc = new TestConfiguration(QString(), it.value());
+        tc->setTestType(TestTypeGTest);
+        tc->setProFile(key.proFile);
+        tc->setDisplayName(key.displayName);
+        tc->setProject(project);
+        result << tc;
+    }
+
     return result;
 }
 
@@ -518,6 +585,17 @@ TestConfiguration *TestTreeModel::getTestConfiguration(const TestTreeItem *item)
             config->setProject(project);
             config->setDisplayName(getCMakeDisplayNameIfNecessary(item->filePath(),
                                                                   item->proFile()));
+        } else if (auto crpcutItem = item->asGoogleTestTreeItem()) {
+            if (int childCount = item->childCount()) {
+                config = new TestConfiguration(QString(), QStringList(item->name()));
+                config->setTestCaseCount(childCount);
+                config->setProFile(item->proFile());
+                config->setProject(project);
+                // item has no filePath set - so take it of the first children
+                config->setDisplayName(getCMakeDisplayNameIfNecessary(
+                                           item->childItem(0)->filePath(), item->proFile()));
+                config->setTestType(TestTypeCrpcut);
+            }
         } else if (auto gtestItem = item->asGoogleTestTreeItem()) {
             const QString &testSpecifier
                     = gtestFilter(gtestItem->state()).arg(item->name()).arg(QLatin1Char('*'));
@@ -550,6 +628,15 @@ TestConfiguration *TestTreeModel::getTestConfiguration(const TestTreeItem *item)
             config->setProject(project);
             config->setDisplayName(getCMakeDisplayNameIfNecessary(item->filePath(),
                                                                   parent->proFile()));
+        } else if (auto crpcutItem = item->asGoogleTestTreeItem()) {
+            QStringList testFunction(parent->name().isEmpty() ? item->name()
+                                                              : parent->name() + QLatin1String("::") + item->name());
+            config = new TestConfiguration(QString(), QStringList(testFunction));
+            config->setProFile(item->proFile());
+            config->setProject(project);
+            config->setDisplayName(getCMakeDisplayNameIfNecessary(item->filePath(),
+                                                                  parent->proFile()));
+            config->setTestType(TestTypeCrpcut);
         } else if (auto gtestParent = parent->asGoogleTestTreeItem()) {
             const QString &testSpecifier
                     = gtestFilter(gtestParent->state()).arg(parent->name()).arg(item->name());
@@ -617,6 +704,9 @@ void TestTreeModel::markAllForRemoval()
 
     foreach (Utils::TreeItem *item, m_googleTestRootItem->children())
         static_cast<TestTreeItem *>(item)->markForRemovalRecursively(true);
+
+    foreach (Utils::TreeItem *item, m_crpcutTestRootItem->children())
+        static_cast<TestTreeItem *>(item)->markForRemovalRecursively(true);
 }
 
 void TestTreeModel::markForRemoval(const QString &filePath)
@@ -624,7 +714,7 @@ void TestTreeModel::markForRemoval(const QString &filePath)
     if (filePath.isEmpty())
         return;
 
-    Type types[] = { AutoTest, QuickTest, GoogleTest };
+    Type types[] = { AutoTest, QuickTest, GoogleTest, CrpcutTest };
     for (Type type : types) {
         TestTreeItem *root = rootItemForType(type);
         for (int childRow = root->childCount() - 1; childRow >= 0; --childRow) {
@@ -648,7 +738,7 @@ void TestTreeModel::markForRemoval(const QString &filePath)
 
 void TestTreeModel::sweep()
 {
-    Type types[] = { AutoTest, QuickTest, GoogleTest };
+    Type types[] = { AutoTest, QuickTest, GoogleTest, CrpcutTest };
     for (Type type : types) {
         TestTreeItem *root = rootItemForType(type);
         sweepChildren(root);
@@ -723,6 +813,7 @@ void TestTreeModel::onParseResultReady(const TestParseResult &result)
         handleParseResult(result);
         break;
     case GoogleTest:
+    case CrpcutTest:
         QTC_ASSERT(result.dataTagsOrTestSets.size() == 1, return);
         handleGTestParseResult(result);
         break;
@@ -827,10 +918,11 @@ void TestTreeModel::handleGTestParseResult(const TestParseResult &result)
         states |= GoogleTestTreeItem::Parameterized;
     if (result.typed)
         states |= GoogleTestTreeItem::Typed;
-    TestTreeItem *toBeModified = m_googleTestRootItem->findChildByNameStateAndFile(
+    GoogleTestTreeItem * rootItem = static_cast<GoogleTestTreeItem *>(rootItemForType(result.type));
+    TestTreeItem *toBeModified = rootItem->findChildByNameStateAndFile(
                 result.testCaseName, states, result.proFile);
     if (!toBeModified) {
-        m_googleTestRootItem->appendChild(GoogleTestTreeItem::createTestItem(result));
+        rootItem->appendChild(GoogleTestTreeItem::createTestItem(result));
         return;
     }
     // if found nothing has to be updated as all relevant members are used to find the item
@@ -854,6 +946,7 @@ void TestTreeModel::removeAllTestItems()
     m_autoTestRootItem->removeChildren();
     m_quickTestRootItem->removeChildren();
     m_googleTestRootItem->removeChildren();
+    m_crpcutTestRootItem->removeChildren();
     emit testTreeModelChanged();
 }
 
@@ -866,6 +959,8 @@ TestTreeItem *TestTreeModel::rootItemForType(TestTreeModel::Type type)
         return m_quickTestRootItem;
     case GoogleTest:
         return m_googleTestRootItem;
+    case CrpcutTest:
+        return m_crpcutTestRootItem;
     case Invalid:
         break;
     }

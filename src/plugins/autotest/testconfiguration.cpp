@@ -38,6 +38,8 @@
 #include <projectexplorer/session.h>
 #include <projectexplorer/target.h>
 
+#include <QDebug>
+
 using namespace ProjectExplorer;
 
 namespace Autotest {
@@ -169,7 +171,7 @@ void TestConfiguration::completeTestInformation()
 
     // if we could not figure out the run configuration
     // try to use the run configuration of the parent project
-    if (!hasDesktopTarget && targetProject && !targetFile.isEmpty()) {
+    if (!hasDesktopTarget && targetProject) {
         if (auto rc = target->activeRunConfiguration()) {
             Runnable runnable = rc->runnable();
             if (isLocal(rc) && runnable.is<StandardRunnable>()) {
@@ -178,6 +180,8 @@ void TestConfiguration::completeTestInformation()
                 env = stdRunnable.environment;
                 hasDesktopTarget = true;
                 guessedRunConfiguration = true;
+                if (targetFile.isEmpty())
+                    targetFile = stdRunnable.executable;
             }
         }
     }

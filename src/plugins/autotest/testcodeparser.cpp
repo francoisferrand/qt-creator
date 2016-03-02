@@ -38,6 +38,7 @@
 #include <cpptools/cpptoolsconstants.h>
 #include <cpptools/cppmodelmanager.h>
 #include <cpptools/cppworkingcopy.h>
+#include <cpptools/editordocumenthandle.h>
 
 #include <projectexplorer/project.h>
 #include <projectexplorer/session.h>
@@ -261,6 +262,26 @@ static bool includesGTest(const CPlusPlus::Document::Ptr &doc,
     return false;
 }
 
+static bool includesCrpcutTest(const CPlusPlus::Document::Ptr &doc,
+                               const CppTools::CppModelManager *cppMM)
+{
+    const QString crpcutH = QLatin1String("crpcut.hpp");
+    foreach (const CPlusPlus::Document::Include &inc, doc->resolvedIncludes()) {
+        if (inc.resolvedFileName().endsWith(crpcutH))
+            return true;
+    }
+
+    if (cppMM) {
+        const CPlusPlus::Snapshot snapshot = cppMM->snapshot();
+        foreach (const QString &include, snapshot.allIncludesForDocument(doc->fileName())) {
+            if (include.endsWith(crpcutH))
+                return true;
+        }
+    }
+
+    return false;
+}
+
 static bool qtTestLibDefined(const CppTools::CppModelManager *cppMM,
                              const QString &fileName)
 {
@@ -339,12 +360,33 @@ static QString quickTestName(const CPlusPlus::Document::Ptr &doc)
 
 static bool hasGTestNames(CPlusPlus::Document::Ptr &document)
 {
+    const QString gtestH = QLatin1String("gtest/gtest.h");
     foreach (const CPlusPlus::Document::MacroUse &macro, document->macroUses()) {
         if (!macro.isFunctionLike())
             continue;
         if (TestUtils::isGTestMacro(QLatin1String(macro.macro().name()))) {
             const QVector<CPlusPlus::Document::Block> args = macro.arguments();
             if (args.size() != 2)
+                continue;
+            if (!macro.macro().fileName().endsWith(gtestH))
+                continue;
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool hasCrpcutTestNames(CPlusPlus::Document::Ptr &document)
+{
+    const QString crpcutH = QLatin1String("crpcut.hpp");
+    foreach (const CPlusPlus::Document::MacroUse &macro, document->macroUses()) {
+        if (!macro.isFunctionLike())
+            continue;
+        if (TestUtils::isCrpcutTestMacro(QLatin1String(macro.macro().name()))) {
+            const QVector<CPlusPlus::Document::Block> args = macro.arguments();
+            if (args.size() == 0)
+                continue;
+            if (!macro.macro().fileName().endsWith(crpcutH))
                 continue;
             return true;
         }
@@ -489,6 +531,71 @@ static void handleQtQuickTest(QFutureInterface<TestParseResult> futureInterface,
         checkQmlDocumentForTestCode(futureInterface, qmlJSDoc, proFile);
 }
 
+struct CrpcutNamespace {
+    QString name;
+    unsigned begin;
+    unsigned end;
+};
+
+static void handleCrpcutTest(QFutureInterface<TestParseResult> futureInterface, const QString &filePath)
+{
+    const QString crpcutH = QLatin1String("crpcut.hpp");
+
+    QString proFile;
+    const CppTools::CppModelManager *cppMM = CppTools::CppModelManager::instance();
+    QList<CppTools::ProjectPart::Ptr> ppList = cppMM->projectPart(filePath);
+    if (ppList.size())
+        proFile = ppList.first()->projectFile;
+
+    CPlusPlus::Document::Ptr document = cppMM->document(filePath);
+    const QByteArray &fileContent = getFileContent(filePath);
+    //QList<CrpcutNamespace> namespaces;
+    QString testsuite;
+    foreach (const CPlusPlus::Document::MacroUse &macro, document->macroUses()) {
+        if (!macro.isFunctionLike() || !macro.macro().fileName().endsWith(crpcutH))
+            continue;
+        if (macro.macro().name() == "TESTSUITE") {
+            if (macro.arguments().size() == 1) {
+                const int begin = macro.arguments().at(0).bytesBegin();
+                const int end = macro.arguments().at(0).bytesEnd();
+                /*namespaces += { QLatin1String(fileContent.mid(begin, end - begin)),
+                                macro.bytesBegin(),
+                                macro.bytesEnd() }; //TODO: how to get the scope end???
+                                */
+                if (!testsuite.isEmpty())
+                    testsuite += QLatin1String("::");
+                testsuite += QLatin1String(fileContent.mid(begin, end - begin)); // TODO: handle TESTSUITE scope
+            }
+            continue;
+        }
+        if (TestUtils::isCrpcutTestMacro(QLatin1String(macro.macro().name()))) {
+            if (macro.arguments().size() == 0)
+                continue;
+
+            TestParseResult parseResult(TestTreeModel::CrpcutTest);
+            parseResult.fileName = filePath;
+//            foreach (const CrpcutNamespace &ns, namespaces)
+//                parseResult.testCaseName = ns.name + '.';
+//            parseResult.testCaseName.
+            parseResult.testCaseName = testsuite; // TODO: support nested test-suites in testtreemodel
+            const int begin = macro.arguments().at(0).bytesBegin();
+            const int end = macro.arguments().at(0).bytesEnd();
+            parseResult.proFile = proFile;
+            parseResult.dataTagsOrTestSets.insert(QString(),
+                                                  {{
+                                                      QLatin1String(fileContent.mid(begin, end - begin)),
+                                                      macro.beginLine(),
+                                                      0 /*column*/,
+                                                      TestTreeItem::TestFunctionOrSet,
+                                                      macro.macro().name() == "DISABLED_TEST"
+                                                        ? GoogleTestTreeItem::Disabled
+                                                        : GoogleTestTreeItem::Enabled
+                                                  }});
+            futureInterface.reportResult(parseResult);
+        }
+    }
+}
+
 static void handleGTest(QFutureInterface<TestParseResult> futureInterface, const QString &filePath)
 {
     const QByteArray &fileContent = getFileContent(filePath);
@@ -573,6 +680,9 @@ static void checkDocumentForTestCode(QFutureInterface<TestParseResult> futureInt
 
             futureInterface.reportResult(parseResult);
         }
+    } else if (includesCrpcutTest(document, modelManager)) {
+        if (hasCrpcutTestNames(document))
+            handleCrpcutTest(futureInterface, document->fileName());
     } else if (includesGTest(document, modelManager)) {
         if (hasGTestNames(document))
             handleGTest(futureInterface, document->fileName());

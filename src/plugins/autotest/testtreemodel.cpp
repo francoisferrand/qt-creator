@@ -585,22 +585,14 @@ TestConfiguration *TestTreeModel::getTestConfiguration(const TestTreeItem *item)
             config->setProject(project);
             config->setDisplayName(getCMakeDisplayNameIfNecessary(item->filePath(),
                                                                   item->proFile()));
-        } else if (auto crpcutItem = item->asGoogleTestTreeItem()) {
-            if (int childCount = item->childCount()) {
-                config = new TestConfiguration(QString(), QStringList(item->name()));
-                config->setTestCaseCount(childCount);
-                config->setProFile(item->proFile());
-                config->setProject(project);
-                // item has no filePath set - so take it of the first children
-                config->setDisplayName(getCMakeDisplayNameIfNecessary(
-                                           item->childItem(0)->filePath(), item->proFile()));
-                config->setTestType(TestTypeCrpcut);
-            }
         } else if (auto gtestItem = item->asGoogleTestTreeItem()) {
-            const QString &testSpecifier
-                    = gtestFilter(gtestItem->state()).arg(item->name()).arg(QLatin1Char('*'));
-
             if (int childCount = item->childCount()) {
+                TestType type = gtestItem->parent() == m_crpcutTestRootItem ? TestTypeCrpcut
+                                                                            : TestTypeGTest;
+                const QString &testSpecifier = type == TestTypeGTest
+                        ? gtestFilter(gtestItem->state()).arg(item->name()).arg(QLatin1Char('*'))
+                        : item->name();
+
                 config = new TestConfiguration(QString(), QStringList(testSpecifier));
                 config->setTestCaseCount(childCount);
                 config->setProFile(item->proFile());
@@ -608,7 +600,7 @@ TestConfiguration *TestTreeModel::getTestConfiguration(const TestTreeItem *item)
                 // item has no filePath set - so take it of the first children
                 config->setDisplayName(getCMakeDisplayNameIfNecessary(
                                            item->childItem(0)->filePath(), item->proFile()));
-                config->setTestType(TestTypeGTest);
+                config->setTestType(type);
             }
         }
         break;
@@ -628,25 +620,20 @@ TestConfiguration *TestTreeModel::getTestConfiguration(const TestTreeItem *item)
             config->setProject(project);
             config->setDisplayName(getCMakeDisplayNameIfNecessary(item->filePath(),
                                                                   parent->proFile()));
-        } else if (auto crpcutItem = item->asGoogleTestTreeItem()) {
-            QStringList testFunction(parent->name().isEmpty() ? item->name()
-                                                              : parent->name() + QLatin1String("::") + item->name());
-            config = new TestConfiguration(QString(), QStringList(testFunction));
-            config->setProFile(item->proFile());
-            config->setProject(project);
-            config->setDisplayName(getCMakeDisplayNameIfNecessary(item->filePath(),
-                                                                  parent->proFile()));
-            config->setTestType(TestTypeCrpcut);
         } else if (auto gtestParent = parent->asGoogleTestTreeItem()) {
-            const QString &testSpecifier
-                    = gtestFilter(gtestParent->state()).arg(parent->name()).arg(item->name());
+            TestType type = gtestParent->parent() == m_crpcutTestRootItem ? TestTypeCrpcut
+                                                                          : TestTypeGTest;
+            const QString &testSpecifier = type == TestTypeGTest
+                    ? gtestFilter(gtestParent->state()).arg(parent->name()).arg(item->name())
+                    : (parent->name().isEmpty() ? item->name()
+                                                : parent->name() + QLatin1String("::") + item->name());
 
             config = new TestConfiguration(QString(), QStringList(testSpecifier));
             config->setProFile(item->proFile());
             config->setProject(project);
             config->setDisplayName(getCMakeDisplayNameIfNecessary(item->filePath(),
                                                                   parent->proFile()));
-            config->setTestType(TestTypeGTest);
+            config->setTestType(type);
         }
         break;
     }

@@ -544,16 +544,18 @@ QList<TestConfiguration *> TestTreeModel::getSelectedTests() const
         }
     }
 
-    it = proFilesWithCheckedTestSets.begin();
-    end = proFilesWithCheckedTestSets.end();
-    for ( ; it != end; ++it) {
-        const ProFileWithDisplayName &key = it.key();
-        TestConfiguration *tc = new TestConfiguration(QString(), it.value());
-        tc->setTestType(TestTypeGTest);
-        tc->setProFile(key.proFile);
-        tc->setDisplayName(key.displayName);
-        tc->setProject(project);
-        result << tc;
+    {
+        QHash<ProFileWithDisplayName, QStringList>::ConstIterator it = proFilesWithCheckedTestSets.begin();
+        QHash<ProFileWithDisplayName, QStringList>::ConstIterator end = proFilesWithCheckedTestSets.end();
+        for ( ; it != end; ++it) {
+            const ProFileWithDisplayName &key = it.key();
+            TestConfiguration *tc = new TestConfiguration(QString(), it.value());
+            tc->setTestType(TestTypeGTest);
+            tc->setProFile(key.proFile);
+            tc->setDisplayName(key.displayName);
+            tc->setProject(project);
+            result << tc;
+        }
     }
 
     return result;

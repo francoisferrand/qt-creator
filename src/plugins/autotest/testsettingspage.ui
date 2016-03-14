@@ -429,7 +429,7 @@
                </sizepolicy>
               </property>
               <property name="toolTip">
-               <string>Number of parallel test case processes to number.</string>
+               <string>Number of test case processes to run in parallel.</string>
               </property>
               <property name="text">
                <string>Threads:</string>
@@ -445,7 +445,7 @@
                </sizepolicy>
               </property>
               <property name="toolTip">
-               <string>Number of parallel test case processes to number.</string>
+               <string>Number of test case processes to run in parallel.</string>
               </property>
               <property name="minimum">
                <number>1</number>
@@ -485,7 +485,7 @@
             <item>
              <widget class="QCheckBox" name="enableTimeoutCB">
               <property name="toolTip">
-               <string>Disable timeouts to never fail a test due to its time consumption. This can be useful when running tests under time consuming tools like valgrind.</string>
+               <string>Disable timeouts to never fail a test due to its time consumption. This can be useful when running tests under time consuming tools like Valgrind.</string>
               </property>
               <property name="text">
                <string>Enable timeouts</string>
@@ -504,7 +504,7 @@
                </sizepolicy>
               </property>
               <property name="toolTip">
-               <string>Extend all timeouts by multiplying the timeout times, including the defaulted timeouts, with factor. The factor must be a positive integer.</string>
+               <string>Extend all timeouts by multiplying all timeout times by factor, including the default timeouts. The factor must be a positive integer.</string>
               </property>
               <property name="text">
                <string>Multiplier:</string>
@@ -513,6 +513,9 @@
             </item>
             <item>
              <widget class="QSpinBox" name="timeoutMultiplierSpin">
+              <property name="toolTip">
+               <string>Extend all timeouts by multiplying all timeout times by factor, including the default timeouts. The factor must be a positive integer.</string>
+              </property>
               <property name="minimum">
                <number>1</number>
               </property>

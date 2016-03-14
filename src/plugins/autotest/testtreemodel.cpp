@@ -50,7 +50,7 @@ TestTreeModel::TestTreeModel(QObject *parent) :
     m_autoTestRootItem(new AutoTestTreeItem(tr("Auto Tests"), QString(), TestTreeItem::Root)),
     m_quickTestRootItem(new QuickTestTreeItem(tr("Qt Quick Tests"), QString(), TestTreeItem::Root)),
     m_googleTestRootItem(new GoogleTestTreeItem(tr("Google Tests"), QString(), TestTreeItem::Root)),
-    m_crpcutTestRootItem(new GoogleTestTreeItem(tr("CrpCut Tests"), QString(), TestTreeItem::Root)),
+    m_crpcutTestRootItem(new GoogleTestTreeItem(tr("Crpcut Tests"), QString(), TestTreeItem::Root)),
     m_parser(new TestCodeParser(this)),
     m_connectionsInitialized(false)
 {

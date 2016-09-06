@@ -30,6 +30,7 @@
 
 #include <coreplugin/icore.h>
 #include <extensionsystem/pluginmanager.h>
+#include <projectexplorer/projectexplorerconstants.h>
 
 #include <utils/detailswidget.h>
 #include <utils/qtcassert.h>
@@ -411,12 +412,10 @@ QModelIndex GdbServerProvidersSettingsWidget::currentIndex() const
 GdbServerProvidersSettingsPage::GdbServerProvidersSettingsPage(QObject *parent)
     : Core::IOptionsPage(parent)
 {
-    setCategory(Constants::BAREMETAL_SETTINGS_CATEGORY);
-    setDisplayCategory(QCoreApplication::translate(
-                       "BareMetal", Constants::BAREMETAL_SETTINGS_TR_CATEGORY));
-    setCategoryIcon(QLatin1String(Constants::BAREMETAL_SETTINGS_CATEGORY_ICON));
     setId(Constants::GDB_PROVIDERS_SETTINGS_ID);
     setDisplayName(tr("GDB Server Providers"));
+    setCategory(ProjectExplorer::Constants::DEVICE_SETTINGS_CATEGORY);
+    setDisplayCategory(QCoreApplication::translate("ProjectExplorer", "Devices"));
 }
 
 QWidget *GdbServerProvidersSettingsPage::widget()

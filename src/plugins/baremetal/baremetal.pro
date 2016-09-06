@@ -48,4 +48,4 @@ HEADERS += baremetalplugin.h \
     defaultgdbserverprovider.h \
     stlinkutilgdbserverprovider.h
 
-RESOURCES = baremetal.qrc
+RESOURCES =

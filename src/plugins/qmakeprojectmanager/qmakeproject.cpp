@@ -479,6 +479,7 @@ void QmakeProject::updateCppCodeModel()
                 allFiles << file;
                 objcppPart->files << ProjectFile(file, ProjectFile::ObjCXXHeader);
             }
+            objcppPart->languageExtensions |= ProjectPart::ObjectiveCExtensions;
 
             const QStringList cxxflags = pro->variableValue(CppFlagsVar);
             CppTools::ProjectPartBuilder::evaluateProjectPartToolchain(objcppPart.data(),

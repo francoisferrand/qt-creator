@@ -39,7 +39,11 @@ enum {
   Token_readonly,
   Token_nonatomic,
   Token_readwrite,
-  Token_identifier
+  Token_identifier,
+  Token_atomic,
+  Token_strong,
+  Token_weak,
+  Token_unsafe_unretained
 };
 
 CPLUSPLUS_EXPORT int classifyObjectiveCContextKeyword(const char *s, int n);

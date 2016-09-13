@@ -33,6 +33,15 @@ static inline int classify4(const char *s) {
             }
         }
     }
+    else if (s[0] == 'w') {
+        if (s[1] == 'e') {
+            if (s[2] == 'a') {
+                if (s[3] == 'k') {
+                    return Token_weak;
+                }
+            }
+        }
+    }
     return Token_identifier;
 }
 
@@ -75,6 +84,18 @@ static inline int classify6(const char *s) {
               }
           }
       }
+      else if (s[1] == 't') {
+          if (s[2] == 'o') {
+              if (s[3] == 'm') {
+                  if (s[4] == 'i') {
+                      if (s[5] == 'c') {
+                          return Token_atomic;
+                      }
+                  }
+              }
+
+          }
+      }
   }
   else if (s[0] == 'b') {
     if (s[1] == 'y') {
@@ -109,6 +130,17 @@ static inline int classify6(const char *s) {
                   if (s[4] == 'e') {
                       if (s[5] == 'r') {
                           return Token_setter;
+                      }
+                  }
+              }
+          }
+      }
+      else if (s[1] == 't') {
+          if (s[2] == 'r') {
+              if (s[3] == 'o') {
+                  if (s[4] == 'n') {
+                      if (s[5] == 'g') {
+                          return Token_strong;
                       }
                   }
               }
@@ -206,6 +238,45 @@ static inline int classify9(const char *s) {
     return Token_identifier;
 }
 
+static inline int classify17(const char *s) {
+    if (s[0] == 'u') {
+        if (s[1] == 'n') {
+            if (s[2] == 's') {
+                if (s[3] == 'a') {
+                    if (s[4] == 'f') {
+                        if (s[5] == 'e') {
+                            if (s[6] == '_') {
+                                if (s[7] == 'u') {
+                                    if (s[8] == 'n') {
+                                        if (s[9] == 'r') {
+                                            if (s[10] == 'e') {
+                                                if (s[11] == 't') {
+                                                    if (s[12] == 'a') {
+                                                        if (s[13] == 'i') {
+                                                            if (s[14] == 'n') {
+                                                                if (s[15] == 'e') {
+                                                                    if (s[16] == 'd') {
+                                                                        return Token_unsafe_unretained;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return Token_identifier;
+}
+
 int CPlusPlus::classifyObjectiveCContextKeyword(const char *s, int n) {
   switch (n) {
     case 2: return classify2(s);
@@ -215,6 +286,7 @@ int CPlusPlus::classifyObjectiveCContextKeyword(const char *s, int n) {
     case 6: return classify6(s);
     case 8: return classify8(s);
     case 9: return classify9(s);
+    case 17: return classify17(s);
     default: return Token_identifier;
   } // switch
 }

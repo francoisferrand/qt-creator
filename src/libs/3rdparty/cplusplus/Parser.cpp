@@ -6499,6 +6499,10 @@ bool Parser::parseObjCPropertyAttribute(ObjCPropertyAttributeAST *&node)
     case Token_readonly:
     case Token_readwrite:
     case Token_nonatomic:
+    case Token_atomic:
+    case Token_strong:
+    case Token_weak:
+    case Token_unsafe_unretained:
         node->attribute_identifier_token = consumeToken();
         return true;
 

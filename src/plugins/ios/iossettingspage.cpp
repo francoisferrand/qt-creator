@@ -39,9 +39,10 @@ IosSettingsPage::IosSettingsPage(QObject *parent)
     : Core::IOptionsPage(parent)
 {
     setId(Constants::IOS_SETTINGS_ID);
-    setDisplayName(tr("iOS Configurations"));
+    setDisplayName(tr("iOS"));
     setCategory(ProjectExplorer::Constants::DEVICE_SETTINGS_CATEGORY);
-    setDisplayCategory(QCoreApplication::translate("ProjectExplorer", "Devices"));
+    setDisplayCategory(QCoreApplication::translate("ProjectExplorer",
+                                       ProjectExplorer::Constants::DEVICE_SETTINGS_TR_CATEGORY));
     //setCategoryIcon(QLatin1String(Constants::IOS_SETTINGS_CATEGORY_ICON));
 }
 

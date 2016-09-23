@@ -47,7 +47,6 @@ QnxSettingsPage::QnxSettingsPage(QObject* parent) :
     setCategory(ProjectExplorer::Constants::DEVICE_SETTINGS_CATEGORY);
     setDisplayCategory(QCoreApplication::translate("ProjectExplorer",
                                        ProjectExplorer::Constants::DEVICE_SETTINGS_TR_CATEGORY));
-    //setCategoryIcon(QLatin1String(Constants::QNX_CATEGORY_ICON));
 }
 
 QWidget* QnxSettingsPage::widget()

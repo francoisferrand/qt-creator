@@ -43,7 +43,6 @@ IosSettingsPage::IosSettingsPage(QObject *parent)
     setCategory(ProjectExplorer::Constants::DEVICE_SETTINGS_CATEGORY);
     setDisplayCategory(QCoreApplication::translate("ProjectExplorer",
                                        ProjectExplorer::Constants::DEVICE_SETTINGS_TR_CATEGORY));
-    //setCategoryIcon(QLatin1String(Constants::IOS_SETTINGS_CATEGORY_ICON));
 }
 
 QWidget *IosSettingsPage::widget()

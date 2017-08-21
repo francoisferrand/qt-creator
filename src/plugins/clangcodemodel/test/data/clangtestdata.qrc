@@ -23,5 +23,6 @@
         <file>preprocessorKeywordsCompletion.cpp</file>
         <file>dotToArrowCorrection.cpp</file>
         <file>noDotToArrowCorrectionForFloats.cpp</file>
+        <file>dereferencedFunction.cpp</file>
     </qresource>
 </RCC>

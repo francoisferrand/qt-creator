@@ -27,6 +27,7 @@
 
 #include "clangcompletionchunkstotextconverter.h"
 
+#include <cplusplus/BackwardsScanner.h>
 #include <cplusplus/Icons.h>
 #include <cplusplus/MatchingText.h>
 #include <cplusplus/Token.h>
@@ -66,6 +67,27 @@ bool ClangAssistProposalItem::implicitlyApplies() const
     return false;
 }
 
+static bool isDereferenced(TextEditor::TextDocumentManipulatorInterface &manipulator,
+                           int basePosition)
+{
+    QTextCursor cursor = manipulator.textCursorAt(basePosition);
+    cursor.setPosition(basePosition);
+
+    BackwardsScanner scanner(cursor, LanguageFeatures());
+    for (int pos = scanner.startToken()-1; pos >= 0; pos--) {
+        switch (scanner[pos].kind()) {
+        case T_COLON_COLON:
+        case T_IDENTIFIER:
+            //Ignore scope specifiers
+            break;
+
+        case T_AMPER: return true;
+        default:      return false;
+        }
+    }
+    return false;
+}
+
 void ClangAssistProposalItem::apply(TextEditor::TextDocumentManipulatorInterface &manipulator,
                                     int basePosition) const
 {
@@ -102,7 +124,7 @@ void ClangAssistProposalItem::apply(TextEditor::TextDocumentManipulatorInterface
                 TextEditor::TextEditorSettings::instance()->completionSettings();
         const bool autoInsertBrackets = completionSettings.m_autoInsertBrackets;
 
-        if (autoInsertBrackets &&
+        if (autoInsertBrackets && !isDereferenced(manipulator, basePosition) &&
                 (ccr.completionKind() == CodeCompletion::FunctionCompletionKind
                  || ccr.completionKind() == CodeCompletion::DestructorCompletionKind
                  || ccr.completionKind() == CodeCompletion::SignalCompletionKind

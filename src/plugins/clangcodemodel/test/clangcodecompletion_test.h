@@ -45,6 +45,7 @@ private slots:
     void testCompleteGlobals();
     void testCompleteMembers();
     void testCompleteFunctions();
+    void testCompleteDereferencedFunction();
     void testCompleteConstructorAndFallbackToGlobalCompletion();
 
     void testCompleteWithDotToArrowCorrection();

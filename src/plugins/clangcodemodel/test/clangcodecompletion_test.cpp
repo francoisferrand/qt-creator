@@ -819,6 +819,13 @@ void ClangCodeCompletionTest::testCompleteFunctions()
     QVERIFY(hasItem(t.proposal, "TType&lt;QString&gt; f(bool)"));
 }
 
+void ClangCodeCompletionTest::testCompleteDereferencedFunction()
+{
+    ProjectLessCompletionTest t("dereferencedFunction.cpp");
+
+    QVERIFY(hasItem(t.proposal, "myFunction")); //opening parenthesis not added in this case
+}
+
 void ClangCodeCompletionTest::testCompleteConstructorAndFallbackToGlobalCompletion()
 {
     ProjectLessCompletionTest t("constructorCompletion.cpp");

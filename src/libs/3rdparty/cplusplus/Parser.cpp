@@ -5624,6 +5624,11 @@ parse_as_unary_expression:
         rewind(lparen_token);
     }
 
+    if (LA() == T_LBRACE) {
+        if (parseBracedInitList0x(node))
+            return true;
+    }
+
     return parseUnaryExpression(node);
 }
 
